@@ -1,16 +1,17 @@
 #!/bin/bash
 
 ###########################################################################
-# This is use to download studio classroom radio from www.studioclassroom.com
-# It include three kinds of radio: "studio classroom", "Let's talk in English",
-# "Advanced".
-#
-# This shell used to prase ".har" file stored through Firefox(press F12, then
-# play radio).
-#
-# We can get m3u8 file through .har file, then get the .ts and .key file
-# through m3u8 file, download .ts and .key file, then rewrite m3u8 file
-# make it can be used by ffmpeg.
+# This is use to download studio classroom radio from
+# http://m.studioclassroom.com/tv-programs.php?level=sc
+# the main purpose of this script is to parse the real http address of
+# the studio classroom video. Then we can use wget to download it.
+# the http address may can not be access, so use tsocks to aviod the wall
+# 
+# 1) get line-tv video url and video number from 
+#    http://m.studioclassroom.com/tv-programs.php?level=sc
+# 2) get inKey from https://tv.line.me/embed/3417570?isAutoPlay=false
+# 3) get real video according inKey and line-tv url
+#    https://tv.line.me/api/video/play/3417570/false?key=V127c5221121e41b75615216fddaa4e7ce4788333f9b2bc800fb5216fddaa4e7ce478
 #
 # Author: LiweiSong <liwei.song@windriver.com>
 # 2018-2019 (c) LiweiSong - Wind River System, Inc.
@@ -28,7 +29,7 @@ SC_DATE=""
 FILENAME_P1=""
 FILENAME_P2=""
 
-# REsolution can be "1080P 720P 480P 360P 270P 144P"
+# Resolution can be "1080P 720P 480P 360P 270P 144P"
 RESOLUTION=""
 
 # temporary filename create by wget
