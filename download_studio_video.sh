@@ -189,11 +189,12 @@ store_mp3_mp4(){
 
 send_email(){
 	rm $EMAIL_CONTENT -rf
-	echo "Subject: Studio Classroom download list -- `date "+%D"`" >> $EMAIL_CONTENT
+	echo "Subject: [official website] Studio Classroom download list -- `date "+%D"`" >> $EMAIL_CONTENT
 	echo >> $EMAIL_CONTENT
 	echo "Date: `date`" >> $EMAIL_CONTENT
 	echo >> $EMAIL_CONTENT
-	echo "mp3 list:" >> $EMAIL_CONTENT
+	echo "File list:" >> $EMAIL_CONTENT
+	echo >> $EMAIL_CONTENT
 	echo "$HOME_OF_MP3/$FILENAME_P1 ($FILENAME_P2).mp3" >> $EMAIL_CONTENT
 	echo >> $EMAIL_CONTENT
 	echo >> $EMAIL_CONTENT
