@@ -43,6 +43,7 @@ SC_MP3="/tmp/SC`date "+%y%m%d"`.mp3"
 HOME_OF_MP3="$HOME/studio_classroom/SC_mp3"
 HOME_OF_MP4="$HOME/studio_classroom/SC_mp4"
 ERROR_DL_LIST="$HOME/studio_classroom/err_dl_list"
+ERROR_DL_LOG="$HOME/studio_classroom/err_dl_log"
 EMAIL_CONTENT="/tmp/email_file"
 
 check_date(){
@@ -71,9 +72,9 @@ check_file(){
 	do
 		if [ ! -f $file ]; then
 			echo "INFO: Create file $file"
-			touch $ERROR_DL_LIST
+			touch $file
 		else
-			echo "INFO: failed download file stored at: $ERROR_DL_LIST"
+			echo "INFO: failed download file stored at: $file"
 		fi
 	done
 }
@@ -100,7 +101,7 @@ prepare_work(){
 	read_resolution
 	clean_tmp_file
 	check_dir $HOME_OF_MP3 $HOME_OF_MP4
-	check_file $ERROR_DL_LIST
+	check_file $ERROR_DL_LIST $ERROR_DL_LOG
 }
 
 # $1 is different VIDEO address, $2 is the output file create by wget.
@@ -122,7 +123,7 @@ wget_html(){
 		fi
 		sleep 5
 		echo "Error: wget $1 failed, retry... $i"
-		tsocks wget -c --quiet $1 -O $2
+		tsocks wget -c --quiet $1 -O $2 2>>$ERROR_DL_LOG
 	done
 
 }
@@ -170,7 +171,12 @@ read_title_of_sc(){
 }
 
 convert_mp4_to_mp3(){
-	ffmpeg -i $SC_MP4  -map 0:a -b:a 128k $SC_MP3
+	/usr/local/bin/ffmpeg -i $SC_MP4  -map 0:a -b:a 128k $SC_MP3 2>>$ERROR_DL_LOG
+	if [ $? -ne 0 ];then
+		echo "Error: ffmpeg -i $SC_MP4  -map 0:a -b:a 128k $SC_MP3 error"
+		echo -n "SC`date "+%y%m%d"`: " >> $ERROR_DL_LIST
+		echo "ffmpeg -i $SC_MP4  -map 0:a -b:a 128k $SC_MP3" >> $ERROR_DL_LIST
+	fi
 }
 
 #store MP4 video if resolution is 1080P, or just store mp3 file only
@@ -179,11 +185,21 @@ store_mp3_mp4(){
 	read_title_of_sc
 
 	echo "INFO: move $SC_MP3 to $HOME_OF_MP3/"
-	mv $SC_MP3 $HOME_OF_MP3/"$FILENAME_P1 ($FILENAME_P2).mp3"
+	mv $SC_MP3 $HOME_OF_MP3/"$FILENAME_P1 ($FILENAME_P2).mp3" 2>>$ERROR_DL_LOG
+	if [ $? -ne 0 ];then
+		echo "Error: move file $SC_MP3 to $HOME_OF_MP3 failed."
+		echo -n "SC`date "+%y%m%d"`: " >> $ERROR_DL_LIST
+		echo "move $SC_MP3 to $HOME_OF_MP3 failed" >> $ERROR_DL_LIST
+	fi
 
 	if [ "$RESOLUTION" == "1080P" ] || [ "$RESOLUTION" == "1080p" ];then
 		echo "INFO: move $SC_MP4 to $HOME_OF_MP4/"
-		mv $SC_MP4 $HOME_OF_MP4/"$FILENAME_P1 ($FILENAME_P2).mp4"
+		mv $SC_MP4 $HOME_OF_MP4/"$FILENAME_P1 ($FILENAME_P2).mp4" 2>>$ERROR_DL_LOG
+		if [ $? -ne 0 ];then
+			echo "Error: move file $SC_MP4 to $HOME_OF_MP4 failed."
+			echo -n "SC`date "+%y%m%d"`: " >> $ERROR_DL_LIST
+			echo "move $SC_MP4 to $HOME_OF_MP4 failed" >> $ERROR_DL_LIST
+		fi
 	fi
 }
 
@@ -200,6 +216,10 @@ send_email(){
 	echo >> $EMAIL_CONTENT
 	echo "Failed download list:" >> $EMAIL_CONTENT
 	cat $ERROR_DL_LIST >> $EMAIL_CONTENT
+	echo >> $EMAIL_CONTENT
+	echo >> $EMAIL_CONTENT
+	echo "Failed log:" >> $EMAIL_CONTENT
+	cat $ERROR_DL_LOG >> $EMAIL_CONTENT
 	git send-email --to="liwei.song@windriver.com"  --thread --no-chain-reply-to $EMAIL_CONTENT
 }
 
