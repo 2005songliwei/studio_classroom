@@ -185,7 +185,7 @@ store_mp3_mp4(){
 	read_title_of_sc
 
 	echo "INFO: move $SC_MP3 to $HOME_OF_MP3/"
-	mv $SC_MP3 $HOME_OF_MP3/"$FILENAME_P1 ($FILENAME_P2).mp3" 2>>$ERROR_DL_LOG
+	echo y| mv $SC_MP3 $HOME_OF_MP3/"$FILENAME_P1 ($FILENAME_P2).mp3" 2>>$ERROR_DL_LOG
 	if [ $? -ne 0 ];then
 		echo "Error: move file $SC_MP3 to $HOME_OF_MP3 failed."
 		echo -n "SC`date "+%y%m%d"`: " >> $ERROR_DL_LIST
@@ -194,7 +194,7 @@ store_mp3_mp4(){
 
 	if [ "$RESOLUTION" == "1080P" ] || [ "$RESOLUTION" == "1080p" ];then
 		echo "INFO: move $SC_MP4 to $HOME_OF_MP4/"
-		mv $SC_MP4 $HOME_OF_MP4/"$FILENAME_P1 ($FILENAME_P2).mp4" 2>>$ERROR_DL_LOG
+		echo y| mv $SC_MP4 $HOME_OF_MP4/"$FILENAME_P1 ($FILENAME_P2).mp4" 2>>$ERROR_DL_LOG
 		if [ $? -ne 0 ];then
 			echo "Error: move file $SC_MP4 to $HOME_OF_MP4 failed."
 			echo -n "SC`date "+%y%m%d"`: " >> $ERROR_DL_LIST
