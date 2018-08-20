@@ -60,6 +60,13 @@ export PART_OF_m3u8
 export LIST_OF_m3u8_addr
 export TS_ADDR_PRE
 
+check_date(){
+	if [ `date "+%u"` == "7" ];then
+		echo "Error: There is no audio on Sunday."
+		exit 1
+	fi
+}
+
 
 check_video_type(){
 	if [ "$1" == "sc" ];then
@@ -324,6 +331,7 @@ send_email(){
 
 
 main_process(){
+	check_date
 	check_video_type $@
 	check_tmp
 	clean_dir
