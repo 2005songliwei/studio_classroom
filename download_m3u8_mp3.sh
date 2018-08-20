@@ -26,6 +26,7 @@ USERNAME=""
 PASSWORD=""
 #export AUDIO_address="http://m.studioclassroom.com/login_radio.php?radio=ad"
 export AUDIO_address
+export PIC_URL="https://shop.studioclassroom.com/"
 
 export DATA_ACCOUNT
 export DATA_VIDEO_ID
@@ -45,10 +46,12 @@ export key_dir=$sc_tmp_dir/key-dir
 export ERROR_DL_LIST=$sc_tmp_dir/err_dl_list
 export ERROR_DL_LOG=$sc_tmp_dir/err_dl_log
 export EMAIL_CONTENT=$sc_tmp_dir/email_file
+export PIC_INDEX=$sc_tmp_dir/pic-index.html
 
 export sc_dir="$HOME/studio_classroom/SC_mp3_m3u8"
 export lt_dir="$HOME/studio_classroom/LT_mp3"
 export ad_dir="$HOME/studio_classroom/AD_mp3"
+export pic_dir="$HOME/studio_classroom/picture/`date "+%Y%m"`"
 #export sc_file="SC`date "+%y%m%d"`.MP3"
 #export mp3_filename="AD`date "+%y%m%d"`.mp3"
 export mp3_filename
@@ -101,12 +104,49 @@ check_tmp(){
 	if [ ! -d $sc_dir ];then
 		echo "INFO: Create $sc_dir"
 		mkdir -p $sc_dir
-	elif [ ! -d $ad_dir ];then
+	fi
+	if [ ! -d $ad_dir ];then
 		echo "INFO: Create $ad_dir"
 		mkdir -p $ad_dir
-	elif [ ! -d $lt_dir ];then
+	fi
+	if [ ! -d $lt_dir ];then
 		echo "INFO: Create $lt_dir"
 		mkdir -p $lt_dir
+	fi
+	if [ ! -d $pic_dir ];then
+		echo "INFO: Create $pic_dir"
+		mkdir -p $pic_dir
+	fi
+}
+
+get_monthly_pic(){
+	if [ `date "+%d"` == "03" ];then
+		tsocks wget -q -c $PIC_URL -O "$PIC_INDEX"
+		if [ $? -ne 0 ];then
+			echo "Error: Error wget picture index"
+			echo "Error: Error wget picture index" >> $ERROR_DL_LIST
+		fi
+		sed -i "s/\"/\n/g" "$PIC_INDEX"
+		grep -r $(date "+%y%m") "$PIC_INDEX" > "$sc_tmp_dir/pic_addr"
+		i=1
+		for addr in $(cat $sc_tmp_dir/pic_addr)
+		do
+			case $i in
+				1)
+					tsocks wget -q -c $addr -O "$pic_dir/LT$(date "+%y%m").jpg"
+					i=$((i+1))
+					;;
+				2)
+					tsocks wget -q -c $addr -O "$pic_dir/SC$(date "+%y%m").jpg"
+					i=$((i+1))
+					;;
+				3)
+					tsocks wget -q -c $addr -O "$pic_dir/AD$(date "+%y%m").jpg"
+					i=$((i+1))
+					;;
+			esac
+		done
+		
 	fi
 }
 
@@ -340,9 +380,10 @@ send_email(){
 
 
 main_process(){
+	check_tmp
+	get_monthly_pic
 	check_date
 	check_video_type $@
-	check_tmp
 	clean_dir
 	get_m3u8_address
 	dl_ts
