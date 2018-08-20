@@ -24,6 +24,7 @@
 login_html="logined.html"
 USERNAME=""
 PASSWORD=""
+EMAIL_ACCOUNT=""
 #export AUDIO_address="http://m.studioclassroom.com/login_radio.php?radio=ad"
 export AUDIO_address
 export PIC_URL="https://shop.studioclassroom.com/"
@@ -146,7 +147,6 @@ get_monthly_pic(){
 					;;
 			esac
 		done
-		
 	fi
 }
 
@@ -179,8 +179,9 @@ get_audio_title(){
 }
 
 get_m3u8_address(){
-	read -p "Input username: " USERNAME
-	read -s -p "Input password: " PASSWORD
+	read -p "Input Email Account to receive download log: " EMAIL_ACCOUNT
+	read -p "Input studio classroom username(Register if you do not have): " USERNAME
+	read -s -p "Input studio classroome password: " PASSWORD
 	echo
 	tsocks wget --tries=30 --post-data "username=$USERNAME&password=$PASSWORD" "$AUDIO_address" -O $sc_tmp_dir/$login_html 2>>$ERROR_DL_LOG
 	if [ $? -ne 0 ];then
@@ -375,7 +376,7 @@ send_email(){
         echo >> $EMAIL_CONTENT
         echo "Download log:" >> $EMAIL_CONTENT
         cat $ERROR_DL_LOG >> $EMAIL_CONTENT
-        git send-email --to="liwei.song@windriver.com" --8bit-encoding=UTF-8  --thread --no-chain-reply-to --no-validate $EMAIL_CONTENT
+        git send-email --to="$EMAIL_ACCOUNT" --8bit-encoding=UTF-8  --thread --no-chain-reply-to --no-validate $EMAIL_CONTENT
 }
 
 
