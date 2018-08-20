@@ -53,6 +53,7 @@ export ad_dir="$HOME/studio_classroom/AD_mp3"
 #export mp3_filename="AD`date "+%y%m%d"`.mp3"
 export mp3_filename
 export mp3_dir
+export AUDIO_TITLE
 
 export POLICYKEY
 export PARENT_m3u8_addr
@@ -72,18 +73,18 @@ check_video_type(){
 	if [ "$1" == "sc" ];then
 		AUDIO_address="http://m.studioclassroom.com/login_radio.php?radio=sc"
 		mp3_dir=$sc_dir
-		mp3_filename="SC`date "+%y%m%d"`.mp3"
+		mp3_filename="SC`date "+%y%m%d"`"
 	elif [ "$1" == "ad" ];then
 		AUDIO_address="http://m.studioclassroom.com/login_radio.php?radio=ad"
-		mp3_filename="AD`date "+%y%m%d"`.mp3"
+		mp3_filename="AD`date "+%y%m%d"`"
 		mp3_dir=$ad_dir
 	elif [ "$1" == "lt" ];then
 		AUDIO_address="http://m.studioclassroom.com/login_radio.php?radio=lt"
-		mp3_filename="LT`date "+%y%m%d"`.mp3"
+		mp3_filename="LT`date "+%y%m%d"`"
 		mp3_dir=$lt_dir
 	else
 		AUDIO_address="http://m.studioclassroom.com/login_radio.php?radio=ad"	
-		mp3_filename="AD`date "+%y%m%d"`.mp3"
+		mp3_filename="AD`date "+%y%m%d"`"
 		mp3_dir=$ad_dir
 	fi
 	echo "INFO: Audio file will be stored at: $mp3_dir/$mp3_filename"
@@ -131,6 +132,12 @@ send_error_email(){
         git send-email --to="liwei.song@windriver.com"  --thread --no-chain-reply-to --no-validate $EMAIL_CONTENT
 }
 
+get_audio_title(){
+	AUDIO_TITLE=`grep -r "panel-title" -A1 $sc_tmp_dir/$login_html |tail -1 |gawk -F'<' '{sub(/^[[:blank:]]*/,"",$1);sub(/[[:blank:]]*$/,"",$1);print $1}'`
+	mp3_filename="${mp3_filename} (${AUDIO_TITLE}).mp3"
+	#echo "$mp3_filename"
+}
+
 get_m3u8_address(){
 	read -p "Input username: " USERNAME
 	read -s -p "Input password: " PASSWORD
@@ -142,6 +149,7 @@ get_m3u8_address(){
 		send_error_email
 		exit 1
 	fi
+	get_audio_title
 	# check data-account id to see if we login successful 
 	if grep -r "data-account" $sc_tmp_dir/$login_html &>/dev/null; then
 		echo "INFO: login successful."
@@ -300,9 +308,10 @@ create_mp3(){
 	echo "INFO: Joint the ts file to mp3 with ffmpeg."
 	#ffmpeg -allowed_extensions ALL -i  $m3u8_file -c copy $sc_dir/$sc_file
 	#ffmpeg -allowed_extensions ALL -i  $m3u8_file -id3v2_version 3 $sc_dir/$sc_file
-	/usr/local/bin/ffmpeg -allowed_extensions ALL -i  $sc_tmp_dir/$F_TS_LIST -map 0:a -b:a 128k  $mp3_dir/$mp3_filename
+	/usr/local/bin/ffmpeg -y -allowed_extensions ALL -i  $sc_tmp_dir/$F_TS_LIST -map 0:a -b:a 128k  "$mp3_dir/$mp3_filename"
 	if [ $? -ne 0 ];then
 		echo "Error: ffmpeg -allowed_extensions ALL -i  $sc_tmp_dir/$F_TS_LIST -map 0:a -b:a 128k  $mp3_dir/$mp3_filename"
+		echo "$mp3_dir/$mp3_filename" >> $ERROR_DL_LIST
 	fi
 
 	echo "INFO: mp3 file stored at: $mp3_dir/$mp3_filename"
@@ -320,13 +329,13 @@ send_email(){
         echo >> $EMAIL_CONTENT
         echo >> $EMAIL_CONTENT
         echo "Failed download list:" >> $EMAIL_CONTENT
-        cat $mp3_filename >> $EMAIL_CONTENT
+	cat $ERROR_DL_LIST >> $EMAIL_CONTENT
         echo >> $EMAIL_CONTENT
         echo >> $EMAIL_CONTENT
         echo >> $EMAIL_CONTENT
         echo "Download log:" >> $EMAIL_CONTENT
         cat $ERROR_DL_LOG >> $EMAIL_CONTENT
-        git send-email --to="liwei.song@windriver.com"  --thread --no-chain-reply-to --no-validate $EMAIL_CONTENT
+        git send-email --to="liwei.song@windriver.com" --8bit-encoding=UTF-8  --thread --no-chain-reply-to --no-validate $EMAIL_CONTENT
 }
 
 
