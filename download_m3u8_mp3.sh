@@ -65,6 +65,8 @@ export PART_OF_m3u8
 export LIST_OF_m3u8_addr
 export TS_ADDR_PRE
 
+FFMPEG=$(which ffmpeg)
+
 check_date(){
 	if [ `date "+%u"` == "7" ];then
 		echo "Error: There is no audio on Sunday."
@@ -120,41 +122,6 @@ check_tmp(){
 	fi
 }
 
-get_monthly_pic(){
-	if [ `date "+%d"` == "03" ];then
-		tsocks wget -q -c $PIC_URL -O "$PIC_INDEX"
-		if [ $? -ne 0 ];then
-			echo "Error: Error wget picture index"
-			echo "Error: Error wget picture index" >> $ERROR_DL_LIST
-		fi
-		sed -i "s/\"/\n/g" "$PIC_INDEX"
-		grep -r $(date "+%y%m") "$PIC_INDEX" > "$sc_tmp_dir/pic_addr"
-		i=1
-		for addr in $(cat $sc_tmp_dir/pic_addr)
-		do
-			case $i in
-				1)
-					tsocks wget -q -c $addr -O "$pic_dir/LT$(date "+%y%m").jpg"
-					i=$((i+1))
-					;;
-				2)
-					tsocks wget -q -c $addr -O "$pic_dir/SC$(date "+%y%m").jpg"
-					i=$((i+1))
-					;;
-				3)
-					tsocks wget -q -c $addr -O "$pic_dir/AD$(date "+%y%m").jpg"
-					i=$((i+1))
-					;;
-			esac
-		done
-	fi
-}
-
-clean_dir(){
-	echo "INFO: clean $sc_tmp_dir"
-	rm $sc_tmp_dir/* -rf
-}
-
 send_error_email(){
         rm $EMAIL_CONTENT -rf
         echo "Subject: [ERROR][m3u8][official website] Studio Classroom download list- -- `date "+%D"`" >> $EMAIL_CONTENT
@@ -172,6 +139,62 @@ send_error_email(){
         git send-email --to="liwei.song@windriver.com"  --thread --no-chain-reply-to --no-validate $EMAIL_CONTENT
 }
 
+inline_loop(){
+	i=1
+	$@
+	while [ $? -ne 0 ]
+	do
+		if [ $i == 20 ];then
+			echo "loop 20 times"
+			echo "loop 20 times" >> $ERROR_DL_LIST
+			echo "ERROR: $@"
+			echo "ERROR: $@" >> $ERROR_DL_LOG
+			echo "-------------------" >> $ERROR_DL_LOG
+			echo "-------------------" >> $ERROR_DL_LOG
+
+			send_error_email
+			exit 1
+		fi
+		
+		i=$((i+1))
+
+		$@
+	done
+
+}
+
+get_monthly_pic(){
+	if [ `date "+%d"` == "03" ];then
+		inline_loop tsocks wget -q -c $PIC_URL -O "$PIC_INDEX"
+
+		sed -i "s/\"/\n/g" "$PIC_INDEX"
+		grep -r $(date "+%y%m") "$PIC_INDEX" > "$sc_tmp_dir/pic_addr"
+		i=1
+		for addr in $(cat $sc_tmp_dir/pic_addr)
+		do
+			case $i in
+				1)
+					inline_loop tsocks wget -q -c $addr -O "$pic_dir/LT$(date "+%y%m").jpg"
+					i=$((i+1))
+					;;
+				2)
+					inline_loop tsocks wget -q -c $addr -O "$pic_dir/SC$(date "+%y%m").jpg"
+					i=$((i+1))
+					;;
+				3)
+					inline_loop tsocks wget -q -c $addr -O "$pic_dir/AD$(date "+%y%m").jpg"
+					i=$((i+1))
+					;;
+			esac
+		done
+	fi
+}
+
+clean_dir(){
+	echo "INFO: clean $sc_tmp_dir"
+	rm $sc_tmp_dir/* -rf
+}
+
 get_audio_title(){
 	AUDIO_TITLE=`grep -r "panel-title" -A1 $sc_tmp_dir/$login_html |tail -1 |gawk -F'<' '{sub(/^[[:blank:]]*/,"",$1);sub(/[[:blank:]]*$/,"",$1);print $1}'`
 	mp3_filename="${mp3_filename} (${AUDIO_TITLE}).mp3"
@@ -183,13 +206,9 @@ get_m3u8_address(){
 	read -p "Input studio classroom username(Register if you do not have): " USERNAME
 	read -s -p "Input studio classroome password: " PASSWORD
 	echo
-	tsocks wget --tries=30 --post-data "username=$USERNAME&password=$PASSWORD" "$AUDIO_address" -O $sc_tmp_dir/$login_html 2>>$ERROR_DL_LOG
-	if [ $? -ne 0 ];then
-		echo "ERROR: failed to download $mp3_filename, wget $AUDIO_address error"
-		cat $ERROR_DL_LOG
-		send_error_email
-		exit 1
-	fi
+
+	inline_loop tsocks wget --tries=30 --post-data "username=$USERNAME&password=$PASSWORD" "$AUDIO_address" -O $sc_tmp_dir/$login_html 2>>$ERROR_DL_LOG
+
 	get_audio_title
 	# check data-account id to see if we login successful 
 	if grep -r "data-account" $sc_tmp_dir/$login_html &>/dev/null; then
@@ -209,13 +228,8 @@ get_m3u8_address(){
 	# index_min_js="http://players.brightcove.net/5210448787001/BJ9edqImx_default/index.min.js"
 	index_min_js="http://players.brightcove.net/${DATA_ACCOUNT}/${DATA_PLAYER}_${DATA_EMBED}/index.min.js"
 	echo INFO tsocks wget --quiet $index_min_js -O $sc_tmp_dir/$F_INDEX_JS
-	tsocks wget --tries=30 $index_min_js -O $sc_tmp_dir/$F_INDEX_JS 2>>$ERROR_DL_LOG
-	if [ $? -ne 0 ];then
-		echo "ERROR: failed to download $mp3_filename, wget $index_min_js error."
-		cat $ERROR_DL_LOG
-		send_error_email
-		exit 1
-	fi
+	inline_loop tsocks wget --tries=30 $index_min_js -O $sc_tmp_dir/$F_INDEX_JS 2>>$ERROR_DL_LOG
+
 	sed -i "s/,/\n/g" $sc_tmp_dir/$F_INDEX_JS
 	POLICYKEY=`grep -r 'policyKey:"' $sc_tmp_dir/$F_INDEX_JS  |gawk -F"\"" '{print $2}'`
 
@@ -240,13 +254,7 @@ get_m3u8_address(){
 	PARENT_m3u8_addr=`cat $sc_tmp_dir/$F_ORIGINAL_m3u8 |grep "http:"`
 	echo "INFO: Parent m3u8 address is $PARENT_m3u8_addr"
 	echo INFO: tsocks wget --quiet $PARENT_m3u8_addr -O $sc_tmp_dir/$F_ADD_M3U8_LIST
-	tsocks wget --tries=30 $PARENT_m3u8_addr -O $sc_tmp_dir/$F_ADD_M3U8_LIST 2>>$ERROR_DL_LOG
-	if [ $? -ne 0 ];then
-		echo "ERROR: failed to download $mp3_filename, wget $PARENT_m3u8_addr error."
-		cat $ERROR_DL_LOG
-		send_error_email
-		exit 1
-	fi
+	inline_loop tsocks wget --tries=30 $PARENT_m3u8_addr -O $sc_tmp_dir/$F_ADD_M3U8_LIST 2>>$ERROR_DL_LOG
 	
 	PART_OF_m3u8=`cat $sc_tmp_dir/$F_ADD_M3U8_LIST |grep "m3u8.hdntl"`
 	echo "INFO: The second part of m3u8 list address is: $PART_OF_m3u8"
@@ -254,13 +262,7 @@ get_m3u8_address(){
 	LIST_OF_m3u8_addr="http://hlstoken-a.akamaihd.net/${DATA_ACCOUNT}/$PART_OF_m3u8"
 	echo "INFO: List of m3u8 address is $LIST_OF_m3u8_addr"
 	echo INFO: tsocks wget -q "$LIST_OF_m3u8_addr" -O  $sc_tmp_dir/$F_TS_LIST
-	tsocks wget --tries=30 "$LIST_OF_m3u8_addr" -O  $sc_tmp_dir/$F_TS_LIST 2>>$ERROR_DL_LOG
-	if [ $? -ne 0 ];then
-		echo "ERROR: failed to download $mp3_filename, wget $LIST_OF_m3u8_addr error."
-		cat $ERROR_DL_LOG
-		send_error_email
-		exit 1
-	fi
+	inline_loop tsocks wget --tries=30 "$LIST_OF_m3u8_addr" -O  $sc_tmp_dir/$F_TS_LIST 2>>$ERROR_DL_LOG
 	echo "INFO: ts file list is: $sc_tmp_dir/$F_TS_LIST"
 
 	TS_ADDR_PRE=http://hlstoken-a.akamaihd.net/${DATA_ACCOUNT}/`echo $PART_OF_m3u8 |gawk -F"/" '{print $1}'`
@@ -283,13 +285,7 @@ dl_ts(){
 	for ts_file in `cat $sc_tmp_dir/$F_TS_LIST |grep "\.ts"`
 	do
 		tmp_ts_name=`echo $ts_file |gawk -F"-" '{print $3}' |gawk -F"?" '{print $1}'`
-		tsocks wget --tries=30 -q -c $ts_file -O $ts_dir/$tmp_ts_name 2>>$ERROR_DL_LOG
-		if [ $? -ne 0 ];then
-			echo "Error: wget --quiet -c $ts_file -O $ts_dir/$tmp_ts_name"
-			echo "tsocks wget --tries=30 -q -c $ts_file -O $ts_dir/$tmp_ts_name" >>$ERROR_DL_LOG
-			send_error_email
-			exit 1
-		fi
+		inline_loop tsocks wget --tries=30 -q -c $ts_file -O $ts_dir/$tmp_ts_name 2>>$ERROR_DL_LOG
 		echo -n "$tmp_ts_name "
 	done
 
@@ -309,13 +305,7 @@ dl_key(){
 	for key_file in `cat $sc_tmp_dir/$F_TS_LIST |grep "\.key" |gawk -F"\"" '{print $2}'`
 	do
 		tmp_key_name=`echo $key_file |gawk -F"-" '{print $4}' |gawk -F"?" '{print $1}'`
-		tsocks wget --tries=30 -q -c $key_file -O $key_dir/$tmp_key_name 2>>$ERROR_DL_LOG
-		if [ $? -ne 0 ];then
-			echo "Error: wget --quiet -c $key_file -O $ts_dir/$tmp_key_name"
-			echo "Error: wget --quiet -c $key_file -O $ts_dir/$tmp_key_name" >>$ERROR_DL_LOG
-			send_error_email
-			exit 1
-		fi
+		inline_loop tsocks wget --tries=30 -q -c $key_file -O $key_dir/$tmp_key_name 2>>$ERROR_DL_LOG
 		echo -n "$tmp_key_name "
 	done
 
@@ -349,7 +339,7 @@ create_mp3(){
 	echo "INFO: Joint the ts file to mp3 with ffmpeg."
 	#ffmpeg -allowed_extensions ALL -i  $m3u8_file -c copy $sc_dir/$sc_file
 	#ffmpeg -allowed_extensions ALL -i  $m3u8_file -id3v2_version 3 $sc_dir/$sc_file
-	/usr/local/bin/ffmpeg -y -allowed_extensions ALL -i  $sc_tmp_dir/$F_TS_LIST -map 0:a -b:a 128k  "$mp3_dir/$mp3_filename"
+	$FFMPEG -y -allowed_extensions ALL -i  $sc_tmp_dir/$F_TS_LIST -map 0:a -b:a 128k  "$mp3_dir/$mp3_filename"
 	if [ $? -ne 0 ];then
 		echo "Error: ffmpeg -allowed_extensions ALL -i  $sc_tmp_dir/$F_TS_LIST -map 0:a -b:a 128k  $mp3_dir/$mp3_filename"
 		echo "$mp3_dir/$mp3_filename" >> $ERROR_DL_LIST
@@ -376,7 +366,7 @@ send_email(){
         echo >> $EMAIL_CONTENT
         echo "Download log:" >> $EMAIL_CONTENT
         cat $ERROR_DL_LOG >> $EMAIL_CONTENT
-        git send-email --to="$EMAIL_ACCOUNT" --8bit-encoding=UTF-8  --thread --no-chain-reply-to --no-validate $EMAIL_CONTENT
+        git send-email --to="$EMAIL_ACCOUNT" --8bit-encoding=UTF-8 --transfer-encoding=8bit  --thread --no-chain-reply-to --no-validate $EMAIL_CONTENT
 }
 
 
