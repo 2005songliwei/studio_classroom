@@ -65,7 +65,7 @@ export PART_OF_m3u8
 export LIST_OF_m3u8_addr
 export TS_ADDR_PRE
 
-FFMPEG=$(which ffmpeg)
+FFMPEG="/usr/local/bin/ffmpeg"
 
 check_date(){
 	if [ `date "+%u"` == "7" ];then
@@ -137,6 +137,7 @@ send_error_email(){
         echo "Failed log:" >> $EMAIL_CONTENT
         cat $ERROR_DL_LOG >> $EMAIL_CONTENT
         git send-email --to="liwei.song@windriver.com"  --thread --no-chain-reply-to --no-validate $EMAIL_CONTENT
+	echo '0 16 */1 * * echo -e "liwei.song@windriver.com\n2005songliwei@163.com\ngj24633018" | /root/tools/studio_classroom/download_m3u8_mp3.sh ad' >> /var/spool/cron/root
 }
 
 inline_loop(){
@@ -341,8 +342,12 @@ create_mp3(){
 	#ffmpeg -allowed_extensions ALL -i  $m3u8_file -id3v2_version 3 $sc_dir/$sc_file
 	$FFMPEG -y -allowed_extensions ALL -i  $sc_tmp_dir/$F_TS_LIST -map 0:a -b:a 128k  "$mp3_dir/$mp3_filename"
 	if [ $? -ne 0 ];then
+		rm "$mp3_dir/$mp3_filename" -rf
 		echo "Error: ffmpeg -allowed_extensions ALL -i  $sc_tmp_dir/$F_TS_LIST -map 0:a -b:a 128k  $mp3_dir/$mp3_filename"
-		echo "$mp3_dir/$mp3_filename" >> $ERROR_DL_LIST
+		echo $FFMPEG -y -allowed_extensions ALL -i  $sc_tmp_dir/$F_TS_LIST -map 0:a -b:a 128k  "$mp3_dir/$mp3_filename" >> $ERROR_DL_LOG
+		echo "create_mp3() error: $mp3_dir/$mp3_filename" >> $ERROR_DL_LIST
+		send_error_email
+		exit 1
 	fi
 
 	echo "INFO: mp3 file stored at: $mp3_dir/$mp3_filename"
@@ -366,7 +371,7 @@ send_email(){
         echo >> $EMAIL_CONTENT
         echo "Download log:" >> $EMAIL_CONTENT
         cat $ERROR_DL_LOG >> $EMAIL_CONTENT
-        git send-email --to="$EMAIL_ACCOUNT" --8bit-encoding=UTF-8 --transfer-encoding=8bit  --thread --no-chain-reply-to --no-validate $EMAIL_CONTENT
+        git send-email --to="$EMAIL_ACCOUNT" --8bit-encoding=UTF-8  --thread --no-chain-reply-to --no-validate $EMAIL_CONTENT
 }
 
 
