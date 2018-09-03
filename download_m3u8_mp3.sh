@@ -136,7 +136,7 @@ send_error_email(){
         echo >> $EMAIL_CONTENT
         echo "Failed log:" >> $EMAIL_CONTENT
         cat $ERROR_DL_LOG >> $EMAIL_CONTENT
-        git send-email --to="liwei.song@windriver.com"  --thread --no-chain-reply-to --no-validate $EMAIL_CONTENT
+        git send-email --to="liwei.song@windriver.com" --8bit-encoding=UTF-8 --thread --no-chain-reply-to --no-validate $EMAIL_CONTENT
 	echo '0 16 */1 * * echo -e "liwei.song@windriver.com\n2005songliwei@163.com\ngj24633018" | /root/tools/studio_classroom/download_m3u8_mp3.sh ad' >> /var/spool/cron/root
 }
 
@@ -165,8 +165,8 @@ inline_loop(){
 }
 
 get_monthly_pic(){
-	if [ `date "+%d"` == "03" ];then
-		inline_loop tsocks wget -q -c $PIC_URL -O "$PIC_INDEX"
+	if [ `date "+%d"` == "04" ];then
+		inline_loop tsocks wget --no-check-certificate -q -c $PIC_URL -O "$PIC_INDEX"
 
 		sed -i "s/\"/\n/g" "$PIC_INDEX"
 		grep -r $(date "+%y%m") "$PIC_INDEX" > "$sc_tmp_dir/pic_addr"
@@ -175,15 +175,15 @@ get_monthly_pic(){
 		do
 			case $i in
 				1)
-					inline_loop tsocks wget -q -c $addr -O "$pic_dir/LT$(date "+%y%m").jpg"
+					inline_loop tsocks wget --no-check-certificate -q -c $addr -O "$pic_dir/LT$(date "+%y%m").jpg"
 					i=$((i+1))
 					;;
 				2)
-					inline_loop tsocks wget -q -c $addr -O "$pic_dir/SC$(date "+%y%m").jpg"
+					inline_loop tsocks wget --no-check-certificate -q -c $addr -O "$pic_dir/SC$(date "+%y%m").jpg"
 					i=$((i+1))
 					;;
 				3)
-					inline_loop tsocks wget -q -c $addr -O "$pic_dir/AD$(date "+%y%m").jpg"
+					inline_loop tsocks wget --no-check-certificate -q -c $addr -O "$pic_dir/AD$(date "+%y%m").jpg"
 					i=$((i+1))
 					;;
 			esac
@@ -376,11 +376,11 @@ send_email(){
 
 
 main_process(){
+	clean_dir
 	check_tmp
 	get_monthly_pic
 	check_date
 	check_video_type $@
-	clean_dir
 	get_m3u8_address
 	dl_ts
 	dl_key
