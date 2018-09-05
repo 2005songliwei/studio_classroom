@@ -81,7 +81,7 @@ check_file(){
 
 clean_tmp_file(){
 	echo "INFO: remove tmeporary file: $TMP_TV_PRO $TMP_LINE_ME $MP4_URL_FILE"
-	rm $TMP_TV_PRO $TMP_LINE_ME $MP4_URL_FILE $SC_MP4 $SC_MP3 -rf
+	rm $TMP_TV_PRO $TMP_LINE_ME $MP4_URL_FILE $SC_MP4 $SC_MP3 $ERROR_DL_LOG -rf
 }
 
 read_resolution(){
@@ -104,12 +104,38 @@ prepare_work(){
 	check_file $ERROR_DL_LIST $ERROR_DL_LOG
 }
 
+
+send_email(){
+	rm $EMAIL_CONTENT -rf
+	if [ "$1" == "error" ];then
+		echo "Subject: [Error][official website] Studio Classroom download list -- `date "+%D"`" >> $EMAIL_CONTENT
+		echo '0 14 */1 * * echo 1080P | /root/tools/studio_classroom/download_studio_video.sh' >> /var/spool/cron/root
+	else
+		echo "Subject: [official website] Studio Classroom download list -- `date "+%D"`" >> $EMAIL_CONTENT
+	fi
+	echo >> $EMAIL_CONTENT
+	echo "Date: `date`" >> $EMAIL_CONTENT
+	echo >> $EMAIL_CONTENT
+	echo "File list:" >> $EMAIL_CONTENT
+	echo >> $EMAIL_CONTENT
+	echo "$HOME_OF_MP3/$FILENAME_P1 ($FILENAME_P2).mp3" >> $EMAIL_CONTENT
+	echo >> $EMAIL_CONTENT
+	echo >> $EMAIL_CONTENT
+	echo "Failed download list:" >> $EMAIL_CONTENT
+	cat $ERROR_DL_LIST >> $EMAIL_CONTENT
+	echo >> $EMAIL_CONTENT
+	echo >> $EMAIL_CONTENT
+	echo "Failed log:" >> $EMAIL_CONTENT
+	cat $ERROR_DL_LOG >> $EMAIL_CONTENT
+	git send-email --to="liwei.song@windriver.com"  --thread --no-chain-reply-to --no-validate $EMAIL_CONTENT
+}
+
 # $1 is different VIDEO address, $2 is the output file create by wget.
 wget_html(){
 
 	i=0
 	echo "INFO: wget --quiet -c $1 -O $2"
-	tsocks wget --quiet $1 -O $2
+	tsocks wget -c $1 -O $2
 	while [ $? -ne 0 ]
 	do
 		i=$((i+1))
@@ -118,12 +144,14 @@ wget_html(){
 			if ! cat $ERROR_DL_LIST |grep `date "+%y%m%d"` &>/dev/null;then
 				echo "ERROR: SC`date "+%y%m%d"` download failed, stored in $ERROR_DL_LIST"
 				echo "SC`date "+%y%m%d"`" >> $ERROR_DL_LIST
+				echo "tsocks wget --quiet $1 -O $2" >> $ERROR_DL_LOG
 			fi
+			send_email error
 			exit 1
 		fi
 		sleep 5
 		echo "Error: wget $1 failed, retry... $i"
-		tsocks wget -c --quiet $1 -O $2 2>>$ERROR_DL_LOG
+		tsocks wget -c  $1 -O $2 2>>$ERROR_DL_LOG
 	done
 
 }
@@ -201,26 +229,6 @@ store_mp3_mp4(){
 			echo "move $SC_MP4 to $HOME_OF_MP4 failed" >> $ERROR_DL_LIST
 		fi
 	fi
-}
-
-send_email(){
-	rm $EMAIL_CONTENT -rf
-	echo "Subject: [official website] Studio Classroom download list -- `date "+%D"`" >> $EMAIL_CONTENT
-	echo >> $EMAIL_CONTENT
-	echo "Date: `date`" >> $EMAIL_CONTENT
-	echo >> $EMAIL_CONTENT
-	echo "File list:" >> $EMAIL_CONTENT
-	echo >> $EMAIL_CONTENT
-	echo "$HOME_OF_MP3/$FILENAME_P1 ($FILENAME_P2).mp3" >> $EMAIL_CONTENT
-	echo >> $EMAIL_CONTENT
-	echo >> $EMAIL_CONTENT
-	echo "Failed download list:" >> $EMAIL_CONTENT
-	cat $ERROR_DL_LIST >> $EMAIL_CONTENT
-	echo >> $EMAIL_CONTENT
-	echo >> $EMAIL_CONTENT
-	echo "Failed log:" >> $EMAIL_CONTENT
-	cat $ERROR_DL_LOG >> $EMAIL_CONTENT
-	git send-email --to="liwei.song@windriver.com"  --thread --no-chain-reply-to --no-validate $EMAIL_CONTENT
 }
 
 main_process(){
