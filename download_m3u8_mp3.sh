@@ -165,26 +165,29 @@ inline_loop(){
 }
 
 get_monthly_pic(){
-	if [ `date "+%d"` == "04" ];then
+	if [ `date "+%d"` == "15" ];then
+		echo wget --no-check-certificate -q -c $PIC_URL -O "$PIC_INDEX"
 		inline_loop tsocks wget --no-check-certificate -q -c $PIC_URL -O "$PIC_INDEX"
 
 		sed -i "s/\"/\n/g" "$PIC_INDEX"
-		grep -r $(date "+%y%m") "$PIC_INDEX" > "$sc_tmp_dir/pic_addr"
-		i=1
+		grep -r "$(date "+%y%m")+" "$PIC_INDEX" > "$sc_tmp_dir/pic_addr"
+		f_type="LT"
 		for addr in $(cat $sc_tmp_dir/pic_addr)
 		do
-			case $i in
-				1)
-					inline_loop tsocks wget --no-check-certificate -q -c $addr -O "$pic_dir/LT$(date "+%y%m").jpg"
-					i=$((i+1))
+			case $f_type in
+				"LT")
+					echo inline_loop tsocks wget --no-check-certificate -q $addr -O "$pic_dir/LT$(date "+%y%m").jpg"
+					inline_loop tsocks wget --no-check-certificate -q $addr -O "$pic_dir/LT$(date "+%y%m").jpg"
+					f_type="SC"
 					;;
-				2)
+				"SC")
+					echo inline_loop tsocks wget --no-check-certificate -q $addr -O "$pic_dir/SC$(date "+%y%m").jpg"
 					inline_loop tsocks wget --no-check-certificate -q -c $addr -O "$pic_dir/SC$(date "+%y%m").jpg"
-					i=$((i+1))
+					f_type="AD"
 					;;
-				3)
-					inline_loop tsocks wget --no-check-certificate -q -c $addr -O "$pic_dir/AD$(date "+%y%m").jpg"
-					i=$((i+1))
+				"AD")
+					echo inline_loop tsocks wget --no-check-certificate -q $addr -O "$pic_dir/AD$(date "+%y%m").jpg"
+					inline_loop tsocks wget --no-check-certificate -q  $addr -O "$pic_dir/AD$(date "+%y%m").jpg"
 					;;
 			esac
 		done
