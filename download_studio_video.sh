@@ -228,6 +228,14 @@ store_mp3_mp4(){
 			echo -n "SC`date "+%y%m%d"`: " >> $ERROR_DL_LIST
 			echo "move $SC_MP4 to $HOME_OF_MP4 failed" >> $ERROR_DL_LIST
 		fi
+
+		# upload it to baidu cloud
+		/usr/bin/bypy upload $HOME_OF_MP4/"$FILENAME_P1 ($FILENAME_P2).mp4" sc_mp4/${FILENAME_P1}.mp4
+		if [ $? -ne 0 ];then
+			echo "Error: upload file $SC_MP4 to Baidu cloud disk sc_mp4/ failed."
+			echo -n "SC`date "+%y%m%d"`: " >> $ERROR_DL_LIST
+			echo "Upload $SC_MP4 to Baidu cloud disk sc_mp4/ failed" >> $ERROR_DL_LIST
+		fi
 	fi
 }
 
