@@ -28,6 +28,7 @@ MP4_REAL_ADDR=""
 SC_DATE=""
 FILENAME_P1=""
 FILENAME_P2=""
+SC_LINETV_URL="https://www.linetv.tw/api/part/10131/eps/1/part?chocomemberId=null"
 
 # Resolution can be "1080P 720P 480P 360P 270P 144P"
 RESOLUTION=""
@@ -36,6 +37,7 @@ RESOLUTION=""
 TMP_TV_PRO="/tmp/tv-programs.html"
 TMP_LINE_ME="/tmp/tv.line.me.html"
 MP4_URL_FILE="/tmp/mp4-file"
+TMP_F_LINETV="/tmp/10131-eps-1-chocomemberId"
 
 SC_MP4="/tmp/SCV`date "+%y%m%d"`.mp4"
 SC_MP3="/tmp/SC`date "+%y%m%d"`.mp3"
@@ -80,8 +82,8 @@ check_file(){
 }
 
 clean_tmp_file(){
-	echo "INFO: remove tmeporary file: $TMP_TV_PRO $TMP_LINE_ME $MP4_URL_FILE"
-	rm $TMP_TV_PRO $TMP_LINE_ME $MP4_URL_FILE $SC_MP4 $SC_MP3 $ERROR_DL_LOG -rf
+	echo "INFO: remove tmeporary file: $TMP_TV_PRO $TMP_LINE_ME $MP4_URL_FILE $TMP_F_LINETV"
+	rm $TMP_TV_PRO $TMP_LINE_ME $MP4_URL_FILE $SC_MP4 $SC_MP3 $ERROR_DL_LOG $TMP_F_LINETV -rf
 }
 
 read_resolution(){
@@ -185,6 +187,16 @@ parse_url(){
 	wget_html $MP4_REAL_ADDR $SC_MP4
 }
 
+parse_url_new(){
+
+	wget_html $VIDEO_URL $TMP_TV_PRO
+	# wget https://www.linetv.tw/api/part/10131/eps/1/part?chocomemberId=null -O /tmp/10131-eps-1-chocomemberId
+	wget_html $SC_LINETV_URL $TMP_F_LINETV
+	# https://d17lx9ucc6k9fc.cloudfront.net/studioclassroom/201812/10131-eps-1229.mp4
+	MP4_REAL_ADDR=`sed "s/\"/\n/g" $TMP_F_LINETV  |grep -i ".mp4"`
+	wget_html $MP4_REAL_ADDR $SC_MP4
+}
+
 # Record sc title to /home/studio_classroom/SC_mp3/SC_TITLE
 read_title_of_sc(){
 
@@ -242,7 +254,8 @@ store_mp3_mp4(){
 main_process(){
 	prepare_work
 	# REsolution can be "1080P 720P 480P 360P 270P 144P"
-	parse_url
+	#parse_url
+	parse_url_new
 	convert_mp4_to_mp3
 	store_mp3_mp4
 	send_email
