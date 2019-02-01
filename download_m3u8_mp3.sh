@@ -64,6 +64,7 @@ export PARENT_m3u8_addr
 export PART_OF_m3u8
 export LIST_OF_m3u8_addr
 export TS_ADDR_PRE
+export VIDEO_TYPE
 
 FFMPEG="/usr/local/bin/ffmpeg"
 
@@ -80,18 +81,22 @@ check_video_type(){
 		AUDIO_address="http://m.studioclassroom.com/login_radio.php?radio=sc"
 		mp3_dir=$sc_dir
 		mp3_filename="SC`date "+%y%m%d"`"
+		VIDEO_TYPE="sc"
 	elif [ "$1" == "ad" ];then
 		AUDIO_address="http://m.studioclassroom.com/login_radio.php?radio=ad"
 		mp3_filename="AD`date "+%y%m%d"`"
 		mp3_dir=$ad_dir
+		VIDEO_TYPE="ad"
 	elif [ "$1" == "lt" ];then
 		AUDIO_address="http://m.studioclassroom.com/login_radio.php?radio=lt"
 		mp3_filename="LT`date "+%y%m%d"`"
 		mp3_dir=$lt_dir
+		VIDEO_TYPE="lt"
 	else
 		AUDIO_address="http://m.studioclassroom.com/login_radio.php?radio=ad"	
 		mp3_filename="AD`date "+%y%m%d"`"
 		mp3_dir=$ad_dir
+		VIDEO_TYPE="ad"
 	fi
 	echo "INFO: Audio file will be stored at: $mp3_dir/$mp3_filename"
 }
@@ -137,7 +142,11 @@ send_error_email(){
         echo "Failed log:" >> $EMAIL_CONTENT
         cat $ERROR_DL_LOG >> $EMAIL_CONTENT
         git send-email --to="liwei.song@windriver.com" --8bit-encoding=UTF-8 --thread --no-chain-reply-to --no-validate $EMAIL_CONTENT
-	echo '0 16 */1 * * echo -e "liwei.song@windriver.com\n2005songliwei@163.com\ngj24633018" | /root/tools/studio_classroom/download_m3u8_mp3.sh ad' >> /var/spool/cron/root
+	if grep -r "0 16" /var/spool/cron/root; then
+		echo '0 20 */1 * * echo -e "liwei.song@windriver.com\n2005songliwei@163.com\ngj24633018" | /root/tools/studio_classroom/download_m3u8_mp3.sh' "$VIDEO_TYPE" >> /var/spool/cron/root
+	else
+		echo '0 16 */1 * * echo -e "liwei.song@windriver.com\n2005songliwei@163.com\ngj24633018" | /root/tools/studio_classroom/download_m3u8_mp3.sh' "$VIDEO_TYPE" >> /var/spool/cron/root
+	fi
 }
 
 inline_loop(){
@@ -165,7 +174,7 @@ inline_loop(){
 }
 
 get_monthly_pic(){
-	if [ `date "+%d"` == "15" ];then
+	if [ `date "+%d"` == "01" ];then
 		echo wget --no-check-certificate -q -c $PIC_URL -O "$PIC_INDEX"
 		inline_loop tsocks wget --no-check-certificate -q -c $PIC_URL -O "$PIC_INDEX"
 
@@ -243,6 +252,7 @@ get_m3u8_address(){
 	# send request to get original m3u8 address
 	# curl -H @file need curl version >= 7.55.0 but the newest in CentOS is 7.29.0
 	# run when curl version < 7.55.0
+	echo curl -s "$edge_address" -H "Host: edge.api.brightcove.com" -H "Accept: application/json;pk=${POLICYKEY}" -H "Referer: http://m.studioclassroom.com/radio.php?level=ad" -H "Origin: http://m.studioclassroom.com" -H "Connection: keep-alive" -H "Cache-Control: max-age=0" -o $sc_tmp_dir/$F_ORIGINAL_m3u8
 	curl -s "$edge_address" -H "Host: edge.api.brightcove.com" -H "Accept: application/json;pk=${POLICYKEY}" -H "Referer: http://m.studioclassroom.com/radio.php?level=ad" -H "Origin: http://m.studioclassroom.com" -H "Connection: keep-alive" -H "Cache-Control: max-age=0" -o $sc_tmp_dir/$F_ORIGINAL_m3u8
 	echo "INFO: Original m3u8 stored at $sc_tmp_dir/$F_ORIGINAL_m3u8"
 	# run when curl version >= 7.55.0

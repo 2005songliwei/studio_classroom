@@ -58,6 +58,8 @@ check_file(){
 clean_tmp_file(){
 	echo "INFO: remove tmeporary file: $TMP_VOA_1 $VOA_ADDR_SUFFIX_FILE $VOA_HTML_DIR $VOA_MP3_LIST"
 	rm $TMP_VOA_1 $VOA_ADDR_SUFFIX_FILE $VOA_HTML_DIR $VOA_MP3_LIST $ERROR_DL_LOG -rf
+	echo > $ERROR_DL_LIST
+	echo > $ERROR_DL_LOG
 }
 
 prepare_work(){
