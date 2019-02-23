@@ -200,9 +200,10 @@ parse_url_new(){
 # Record sc title to /home/studio_classroom/SC_mp3/SC_TITLE
 read_title_of_sc(){
 
-	SC_DATE=`grep -r -w "time" $TMP_TV_PRO  |awk -F">" '{print $2}' |awk -F"<" '{print $1}'`
+	SC_DATE=`grep -r -w "/time" $TMP_TV_PRO  |awk -F"<" '{print $1}'`
 	month_day=`echo $SC_DATE |awk -F'/' '{print $2 $3}'`
-	FILENAME_P1=SC${SC_DATE:2:2}$month_day
+	#FILENAME_P1=SC${SC_DATE:2:2}$month_day
+	FILENAME_P1=SC`date "+%y"`$month_day
 
 	tmp_title=`grep -r "sc-video-title sc-tvprograms-title" $TMP_TV_PRO -A1 |tail -1 |awk -F'<' '{print $1}'`
 	FILENAME_P2=`echo $tmp_title`
