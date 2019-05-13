@@ -232,14 +232,14 @@ get_m3u8_address(){
 		send_error_email
 		exit 1
 	fi
-	DATA_ACCOUNT=`grep -r "data-account" $sc_tmp_dir/$login_html|gawk -F"\"" '{print $2}'`
+	DATA_ACCOUNT=`grep -r "data-account" $sc_tmp_dir/$login_html|gawk -F"\"" '{print $6}'`
 	DATA_VIDEO_ID=`grep -r "data-video-id" $sc_tmp_dir/$login_html|gawk -F"\"" '{print $2}'`
 	DATA_PLAYER=`grep -r "data-player" $sc_tmp_dir/$login_html|gawk -F"\"" '{print $2}'`
 	DATA_EMBED=`grep -r "data-embed" $sc_tmp_dir/$login_html|gawk -F"\"" '{print $2}'`
 	
 	# this js include "policykey" which will be used when POST header to edge.api.brightcove.com
 	# index_min_js="http://players.brightcove.net/5210448787001/BJ9edqImx_default/index.min.js"
-	index_min_js="http://players.brightcove.net/${DATA_ACCOUNT}/${DATA_PLAYER}_${DATA_EMBED}/index.min.js"
+	index_min_js="http://players.brightcove.net/${DATA_ACCOUNT}/BJ9edqImx_default/index.min.js"
 	echo INFO tsocks wget --quiet $index_min_js -O $sc_tmp_dir/$F_INDEX_JS
 	inline_loop tsocks wget --tries=30 $index_min_js -O $sc_tmp_dir/$F_INDEX_JS 2>>$ERROR_DL_LOG
 
