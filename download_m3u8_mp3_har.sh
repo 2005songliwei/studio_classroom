@@ -173,10 +173,10 @@ get_audio_title(){
 
 get_m3u8_address(){
 
-	cat 190420.har |grep "data-account=" > $sc_tmp_dir/data_account
+	cat $har_file |grep "data-account=" > $sc_tmp_dir/data_account
 	sed -i 's@\\n@\n@g' $sc_tmp_dir/data_account
 	sed -i 's@\\@@g' $sc_tmp_dir/data_account
-	DATA_ACCOUNT=`grep -r "data-account" $sc_tmp_dir/data_account | gawk -F"\"" '{print $2}'`
+	DATA_ACCOUNT=`grep -r "data-account" $sc_tmp_dir/data_account | gawk -F"\"" '{print $6}'`
 
 	cat $har_file |grep "hlstoken-a" > $sc_tmp_dir/$F_ORIGINAL_m3u8
 	sed -i 's/"/\n/g' $sc_tmp_dir/$F_ORIGINAL_m3u8
