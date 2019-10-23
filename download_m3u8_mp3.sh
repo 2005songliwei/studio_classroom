@@ -232,7 +232,7 @@ get_m3u8_address(){
 		send_error_email
 		exit 1
 	fi
-	DATA_ACCOUNT=`grep -r "data-account" $sc_tmp_dir/$login_html|gawk -F"\"" '{print $6}'`
+	DATA_ACCOUNT=`grep -r "data-account" $sc_tmp_dir/$login_html|gawk -F"\"" '{print $2}'`
 	DATA_VIDEO_ID=`grep -r "data-video-id" $sc_tmp_dir/$login_html|gawk -F"\"" '{print $2}'`
 	DATA_PLAYER=`grep -r "data-player" $sc_tmp_dir/$login_html|gawk -F"\"" '{print $2}'`
 	DATA_EMBED=`grep -r "data-embed" $sc_tmp_dir/$login_html|gawk -F"\"" '{print $2}'`
