@@ -212,7 +212,7 @@ read_title_of_sc(){
 }
 
 convert_mp4_to_mp3(){
-	/usr/local/bin/ffmpeg -i $SC_MP4  -map 0:a -b:a 128k $SC_MP3
+	/usr/local/bin/ffmpeg -i $SC_MP4  -map 0:a -b:a 320k $SC_MP3
 	if [ $? -ne 0 ];then
 		echo "Error: ffmpeg -i $SC_MP4  -map 0:a -b:a 128k $SC_MP3 error"
 		echo -n "SC`date "+%y%m%d"`: " >> $ERROR_DL_LIST
