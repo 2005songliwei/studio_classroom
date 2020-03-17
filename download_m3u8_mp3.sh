@@ -265,6 +265,7 @@ get_m3u8_address(){
 		exit 1
 	fi
 	sed -i 's/"/\n/g' $sc_tmp_dir/$F_ORIGINAL_m3u8
+	sed -i 's@\\u0026@\&@g' $sc_tmp_dir/$F_ORIGINAL_m3u8
 	PARENT_m3u8_addr=`cat $sc_tmp_dir/$F_ORIGINAL_m3u8 |grep "http:"`
 	echo "INFO: Parent m3u8 address is $PARENT_m3u8_addr"
 	echo INFO: tsocks wget --quiet $PARENT_m3u8_addr -O $sc_tmp_dir/$F_ADD_M3U8_LIST
@@ -353,7 +354,7 @@ create_mp3(){
 	echo "INFO: Joint the ts file to mp3 with ffmpeg."
 	#ffmpeg -allowed_extensions ALL -i  $m3u8_file -c copy $sc_dir/$sc_file
 	#ffmpeg -allowed_extensions ALL -i  $m3u8_file -id3v2_version 3 $sc_dir/$sc_file
-	$FFMPEG -y -allowed_extensions ALL -i  $sc_tmp_dir/$F_TS_LIST -map 0:a -b:a 320k  "$mp3_dir/$mp3_filename"
+	$FFMPEG -y -allowed_extensions ALL -i  $sc_tmp_dir/$F_TS_LIST -map 0:a -b:a 128k  "$mp3_dir/$mp3_filename"
 	if [ $? -ne 0 ];then
 		rm "$mp3_dir/$mp3_filename" -rf
 		echo "Error: ffmpeg -allowed_extensions ALL -i  $sc_tmp_dir/$F_TS_LIST -map 0:a -b:a 128k  $mp3_dir/$mp3_filename"
