@@ -271,20 +271,13 @@ get_m3u8_address(){
 	echo INFO: tsocks wget --quiet $PARENT_m3u8_addr -O $sc_tmp_dir/$F_ADD_M3U8_LIST
 	inline_loop tsocks wget --tries=30 $PARENT_m3u8_addr -O $sc_tmp_dir/$F_ADD_M3U8_LIST 2>>$ERROR_DL_LOG
 	
-	PART_OF_m3u8=`cat $sc_tmp_dir/$F_ADD_M3U8_LIST |grep "m3u8.hdntl"`
-	echo "INFO: The second part of m3u8 list address is: $PART_OF_m3u8"
 
-	LIST_OF_m3u8_addr="http://hlstoken-a.akamaihd.net/${DATA_ACCOUNT}/$PART_OF_m3u8"
+	#LIST_OF_m3u8_addr="http://manifest.prod.boltdns.net/manifest/v1/hls/v4/clear/5210448787001/dae0a9d6-c2a4-4c53-bcb0-0044c73b3e7e/554a5450-4040-4090-b2c3-932d27cb0caa/10s/rendition.m3u8?fastly_token=NWVhODdkZjBfZmFiNGE0YzdiZDZlZGMxZTZlZWM1OGVhZjNiNzQ5MTk3NmQ4YTkyNDJhOTU5NDQxYmMyYzA2YWIxOTMxZjZmNw%3D%3D"
+	LIST_OF_m3u8_addr=`cat $sc_tmp_dir/$F_ADD_M3U8_LIST |grep "^http" |grep m3u8`
 	echo "INFO: List of m3u8 address is $LIST_OF_m3u8_addr"
 	echo INFO: tsocks wget -q "$LIST_OF_m3u8_addr" -O  $sc_tmp_dir/$F_TS_LIST
 	inline_loop tsocks wget --tries=30 "$LIST_OF_m3u8_addr" -O  $sc_tmp_dir/$F_TS_LIST 2>>$ERROR_DL_LOG
 	echo "INFO: ts file list is: $sc_tmp_dir/$F_TS_LIST"
-
-	TS_ADDR_PRE=http://hlstoken-a.akamaihd.net/${DATA_ACCOUNT}/`echo $PART_OF_m3u8 |gawk -F"/" '{print $1}'`
-	echo "INFO: prepend ts address is: $TS_ADDR_PRE"
-	# insert "http://hlstoken-a.akamaihd.net/5210448787001/5809624362001/" before 5210448787001
-	sed -i "s#$DATA_ACCOUNT#$TS_ADDR_PRE/&#g" $sc_tmp_dir/$F_TS_LIST
-	
 }
 
 
@@ -299,7 +292,7 @@ dl_ts(){
 
 	for ts_file in `cat $sc_tmp_dir/$F_TS_LIST |grep "\.ts"`
 	do
-		tmp_ts_name=`echo $ts_file |gawk -F"-" '{print $3}' |gawk -F"?" '{print $1}'`
+		tmp_ts_name=`echo $ts_file |gawk -F"?" '{print $1}' |gawk -F"/" '{print $NF}'`
 		inline_loop tsocks wget --tries=30 -q -c $ts_file -O $ts_dir/$tmp_ts_name 2>>$ERROR_DL_LOG
 		echo -n "$tmp_ts_name "
 	done
@@ -330,19 +323,15 @@ dl_key(){
 
 create_m3u8_for_ffmpeg(){
 	ts_file_count=`cat $sc_tmp_dir/$F_TS_LIST |grep "\.ts" |wc -l`
-	key_file_count=`cat $sc_tmp_dir/$F_TS_LIST |grep "\.key" |wc -l`
+	#key_file_count=`cat $sc_tmp_dir/$F_TS_LIST |grep "\.key" |wc -l`
 
 
 	echo "INFO: Create local ts m3u8 file for ffmpeg"
 
-	for i in `seq 1 $ts_file_count`
+	for i in `seq 0 $ts_file_count`
 	do
-		sed -i "/-$i.ts/c $ts_dir/$i.ts" $sc_tmp_dir/$F_TS_LIST
-	done
-
-	for i in `ls $key_dir`
-	do
-		sed -i "/encryption-$i/c #EXT-X-KEY:METHOD=AES-128,URI=\"$key_dir/$i\"" $sc_tmp_dir/$F_TS_LIST
+		#sed -i "/-$i.ts/c $ts_dir/$i.ts" $sc_tmp_dir/$F_TS_LIST
+		sed -i "/segment$i.ts/c $ts_dir/segment$i.ts" $sc_tmp_dir/$F_TS_LIST
 	done
 
 	echo "INFO: Finished create local ts m3u8 file for ffmpeg"
@@ -397,7 +386,6 @@ main_process(){
 	check_video_type $@
 	get_m3u8_address
 	dl_ts
-	dl_key
 	create_m3u8_for_ffmpeg
 	create_mp3
 	send_email $@
