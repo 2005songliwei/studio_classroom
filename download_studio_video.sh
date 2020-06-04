@@ -129,7 +129,7 @@ send_email(){
 	echo >> $EMAIL_CONTENT
 	echo "Failed log:" >> $EMAIL_CONTENT
 	cat $ERROR_DL_LOG >> $EMAIL_CONTENT
-	git send-email --to="liwei.song@windriver.com"  --thread --no-chain-reply-to --no-validate $EMAIL_CONTENT
+	tsocks git send-email --to="liwei.song@windriver.com"  --thread --no-chain-reply-to --no-validate $EMAIL_CONTENT
 }
 
 # $1 is different VIDEO address, $2 is the output file create by wget.
@@ -212,7 +212,7 @@ read_title_of_sc(){
 }
 
 convert_mp4_to_mp3(){
-	/usr/local/bin/ffmpeg -i $SC_MP4  -map 0:a -b:a 320k $SC_MP3
+	/usr/local/bin/ffmpeg -i $SC_MP4  -map 0:a -b:a 128k $SC_MP3
 	if [ $? -ne 0 ];then
 		echo "Error: ffmpeg -i $SC_MP4  -map 0:a -b:a 128k $SC_MP3 error"
 		echo -n "SC`date "+%y%m%d"`: " >> $ERROR_DL_LIST
