@@ -266,7 +266,7 @@ get_m3u8_address(){
 	fi
 	sed -i 's/"/\n/g' $sc_tmp_dir/$F_ORIGINAL_m3u8
 	sed -i 's@\\u0026@\&@g' $sc_tmp_dir/$F_ORIGINAL_m3u8
-	PARENT_m3u8_addr=`cat $sc_tmp_dir/$F_ORIGINAL_m3u8 |grep "http:"`
+	PARENT_m3u8_addr=`cat $sc_tmp_dir/$F_ORIGINAL_m3u8 |grep "http:" |grep "m3u8"`
 	echo "INFO: Parent m3u8 address is $PARENT_m3u8_addr"
 	echo INFO: tsocks wget --quiet $PARENT_m3u8_addr -O $sc_tmp_dir/$F_ADD_M3U8_LIST
 	inline_loop tsocks wget --tries=30 $PARENT_m3u8_addr -O $sc_tmp_dir/$F_ADD_M3U8_LIST 2>>$ERROR_DL_LOG
