@@ -21,6 +21,8 @@
 # 2018-2019 (c) LiweiSong - Wind River System, Inc.
 ###########################################################################
 
+TSOCKS="/usr/bin/tsocks"
+#TSOCKS=""
 login_html="logined.html"
 USERNAME=""
 PASSWORD=""
@@ -141,7 +143,7 @@ send_error_email(){
         echo >> $EMAIL_CONTENT
         echo "Failed log:" >> $EMAIL_CONTENT
         cat $ERROR_DL_LOG >> $EMAIL_CONTENT
-        tsocks git send-email --to="liwei.song@windriver.com" --8bit-encoding=UTF-8 --thread --no-chain-reply-to --no-validate $EMAIL_CONTENT
+        $TSOCKS git send-email --to="liwei.song@windriver.com" --8bit-encoding=UTF-8 --thread --no-chain-reply-to --no-validate $EMAIL_CONTENT
 	if grep -r "0 16" /var/spool/cron/root; then
 		echo '0 20 */1 * * echo -e "liwei.song@windriver.com\n2005songliwei@163.com\ngj24633018" | /root/tools/studio_classroom/download_m3u8_mp3.sh' "$VIDEO_TYPE" >> /var/spool/cron/root
 	else
@@ -176,7 +178,7 @@ inline_loop(){
 get_monthly_pic(){
 	if [ `date "+%d"` == "01" ];then
 		echo wget --no-check-certificate -q -c $PIC_URL -O "$PIC_INDEX"
-		inline_loop tsocks wget --no-check-certificate -q -c $PIC_URL -O "$PIC_INDEX"
+		inline_loop $TSOCKS wget --no-check-certificate -q -c $PIC_URL -O "$PIC_INDEX"
 
 		sed -i "s/\"/\n/g" "$PIC_INDEX"
 		grep -r "$(date "+%y%m")+" "$PIC_INDEX" > "$sc_tmp_dir/pic_addr"
@@ -185,18 +187,18 @@ get_monthly_pic(){
 		do
 			case $f_type in
 				"LT")
-					echo inline_loop tsocks wget --no-check-certificate -q $addr -O "$pic_dir/LT$(date "+%y%m").jpg"
-					inline_loop tsocks wget --no-check-certificate -q $addr -O "$pic_dir/LT$(date "+%y%m").jpg"
+					echo inline_loop $TSOCKS wget --no-check-certificate -q $addr -O "$pic_dir/LT$(date "+%y%m").jpg"
+					inline_loop $TSOCKS wget --no-check-certificate -q $addr -O "$pic_dir/LT$(date "+%y%m").jpg"
 					f_type="SC"
 					;;
 				"SC")
-					echo inline_loop tsocks wget --no-check-certificate -q $addr -O "$pic_dir/SC$(date "+%y%m").jpg"
-					inline_loop tsocks wget --no-check-certificate -q -c $addr -O "$pic_dir/SC$(date "+%y%m").jpg"
+					echo inline_loop $TSOCKS wget --no-check-certificate -q $addr -O "$pic_dir/SC$(date "+%y%m").jpg"
+					inline_loop $TSOCKS wget --no-check-certificate -q -c $addr -O "$pic_dir/SC$(date "+%y%m").jpg"
 					f_type="AD"
 					;;
 				"AD")
-					echo inline_loop tsocks wget --no-check-certificate -q $addr -O "$pic_dir/AD$(date "+%y%m").jpg"
-					inline_loop tsocks wget --no-check-certificate -q  $addr -O "$pic_dir/AD$(date "+%y%m").jpg"
+					echo inline_loop $TSOCKS wget --no-check-certificate -q $addr -O "$pic_dir/AD$(date "+%y%m").jpg"
+					inline_loop $TSOCKS wget --no-check-certificate -q  $addr -O "$pic_dir/AD$(date "+%y%m").jpg"
 					;;
 			esac
 		done
@@ -220,7 +222,7 @@ get_m3u8_address(){
 	read -s -p "Input studio classroome password: " PASSWORD
 	echo
 
-	inline_loop tsocks wget --tries=30 --post-data "username=$USERNAME&password=$PASSWORD" "$AUDIO_address" -O $sc_tmp_dir/$login_html 2>>$ERROR_DL_LOG
+	inline_loop $TSOCKS wget --tries=30 --post-data "username=$USERNAME&password=$PASSWORD" "$AUDIO_address" -O $sc_tmp_dir/$login_html 2>>$ERROR_DL_LOG
 
 	get_audio_title
 	# check data-account id to see if we login successful 
@@ -240,8 +242,8 @@ get_m3u8_address(){
 	# this js include "policykey" which will be used when POST header to edge.api.brightcove.com
 	# index_min_js="http://players.brightcove.net/5210448787001/BJ9edqImx_default/index.min.js"
 	index_min_js="http://players.brightcove.net/${DATA_ACCOUNT}/BJ9edqImx_default/index.min.js"
-	echo INFO tsocks wget --quiet $index_min_js -O $sc_tmp_dir/$F_INDEX_JS
-	inline_loop tsocks wget --tries=30 $index_min_js -O $sc_tmp_dir/$F_INDEX_JS 2>>$ERROR_DL_LOG
+	echo INFO $TSOCKS wget --quiet $index_min_js -O $sc_tmp_dir/$F_INDEX_JS
+	inline_loop $TSOCKS wget --tries=30 $index_min_js -O $sc_tmp_dir/$F_INDEX_JS 2>>$ERROR_DL_LOG
 
 	sed -i "s/,/\n/g" $sc_tmp_dir/$F_INDEX_JS
 	POLICYKEY=`grep -r 'policyKey:"' $sc_tmp_dir/$F_INDEX_JS  |gawk -F"\"" '{print $2}'`
@@ -268,15 +270,15 @@ get_m3u8_address(){
 	sed -i 's@\\u0026@\&@g' $sc_tmp_dir/$F_ORIGINAL_m3u8
 	PARENT_m3u8_addr=`cat $sc_tmp_dir/$F_ORIGINAL_m3u8 |grep "http:" |grep "m3u8"`
 	echo "INFO: Parent m3u8 address is $PARENT_m3u8_addr"
-	echo INFO: tsocks wget --quiet $PARENT_m3u8_addr -O $sc_tmp_dir/$F_ADD_M3U8_LIST
-	inline_loop tsocks wget --tries=30 $PARENT_m3u8_addr -O $sc_tmp_dir/$F_ADD_M3U8_LIST 2>>$ERROR_DL_LOG
+	echo INFO: $TSOCKS wget --quiet $PARENT_m3u8_addr -O $sc_tmp_dir/$F_ADD_M3U8_LIST
+	inline_loop $TSOCKS wget --tries=30 $PARENT_m3u8_addr -O $sc_tmp_dir/$F_ADD_M3U8_LIST 2>>$ERROR_DL_LOG
 	
 
 	#LIST_OF_m3u8_addr="http://manifest.prod.boltdns.net/manifest/v1/hls/v4/clear/5210448787001/dae0a9d6-c2a4-4c53-bcb0-0044c73b3e7e/554a5450-4040-4090-b2c3-932d27cb0caa/10s/rendition.m3u8?fastly_token=NWVhODdkZjBfZmFiNGE0YzdiZDZlZGMxZTZlZWM1OGVhZjNiNzQ5MTk3NmQ4YTkyNDJhOTU5NDQxYmMyYzA2YWIxOTMxZjZmNw%3D%3D"
 	LIST_OF_m3u8_addr=`cat $sc_tmp_dir/$F_ADD_M3U8_LIST |grep "^http" |grep m3u8`
 	echo "INFO: List of m3u8 address is $LIST_OF_m3u8_addr"
-	echo INFO: tsocks wget -q "$LIST_OF_m3u8_addr" -O  $sc_tmp_dir/$F_TS_LIST
-	inline_loop tsocks wget --tries=30 "$LIST_OF_m3u8_addr" -O  $sc_tmp_dir/$F_TS_LIST 2>>$ERROR_DL_LOG
+	echo INFO: $TSOCKS wget -q "$LIST_OF_m3u8_addr" -O  $sc_tmp_dir/$F_TS_LIST
+	inline_loop $TSOCKS wget --tries=30 "$LIST_OF_m3u8_addr" -O  $sc_tmp_dir/$F_TS_LIST 2>>$ERROR_DL_LOG
 	echo "INFO: ts file list is: $sc_tmp_dir/$F_TS_LIST"
 }
 
@@ -293,7 +295,7 @@ dl_ts(){
 	for ts_file in `cat $sc_tmp_dir/$F_TS_LIST |grep "\.ts"`
 	do
 		tmp_ts_name=`echo $ts_file |gawk -F"?" '{print $1}' |gawk -F"/" '{print $NF}'`
-		inline_loop tsocks wget --tries=30 -q -c $ts_file -O $ts_dir/$tmp_ts_name 2>>$ERROR_DL_LOG
+		inline_loop $TSOCKS wget --tries=30 -q -c $ts_file -O $ts_dir/$tmp_ts_name 2>>$ERROR_DL_LOG
 		echo -n "$tmp_ts_name "
 	done
 
@@ -313,7 +315,7 @@ dl_key(){
 	for key_file in `cat $sc_tmp_dir/$F_TS_LIST |grep "\.key" |gawk -F"\"" '{print $2}'`
 	do
 		tmp_key_name=`echo $key_file |gawk -F"-" '{print $4}' |gawk -F"?" '{print $1}'`
-		inline_loop tsocks wget --tries=30 -q -c $key_file -O $key_dir/$tmp_key_name 2>>$ERROR_DL_LOG
+		inline_loop $TSOCKS wget --tries=30 -q -c $key_file -O $key_dir/$tmp_key_name 2>>$ERROR_DL_LOG
 		echo -n "$tmp_key_name "
 	done
 
@@ -374,13 +376,29 @@ send_email(){
         echo >> $EMAIL_CONTENT
         echo "Download log:" >> $EMAIL_CONTENT
         cat $ERROR_DL_LOG >> $EMAIL_CONTENT
-        tsocks git send-email --to="$EMAIL_ACCOUNT" --8bit-encoding=UTF-8  --thread --no-chain-reply-to --no-validate $EMAIL_CONTENT
+        $TSOCKS git send-email --to="$EMAIL_ACCOUNT" --8bit-encoding=UTF-8  --thread --no-chain-reply-to --no-validate $EMAIL_CONTENT
 }
 
+check_proxy(){
+	rm $sc_tmp_dir/google.html
+	$TSOCKS wget www.google.com -O $sc_tmp_dir/google.html
+	if [ $? != 0 ];then
+		ssh lsong@ala-lpggp4.wrs.com -ND 0.0.0.0:1080 &
+		sleep 5
+	else
+		return
+	fi
+	$TSOCKS wget www.google.com -O $sc_tmp_dir/google.html
+	if [ $? != 0 ];then
+		ssh lsong@ala-lpd-test1.wrs.com -ND 0.0.0.0:1080 &
+		sleep 5
+	fi
+}
 
 main_process(){
 	clean_dir
 	check_tmp
+	check_proxy
 	get_monthly_pic
 	check_date
 	check_video_type $@
