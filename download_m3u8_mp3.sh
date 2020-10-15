@@ -80,22 +80,22 @@ check_date(){
 
 check_video_type(){
 	if [ "$1" == "sc" ];then
-		AUDIO_address="http://m.studioclassroom.com/login_radio.php?radio=sc"
+		AUDIO_address="http://m.studioclassroom.com/login_radio.php?req=1&radio=sc"
 		mp3_dir=$sc_dir
 		mp3_filename="SC`date "+%y%m%d"`"
 		VIDEO_TYPE="sc"
 	elif [ "$1" == "ad" ];then
-		AUDIO_address="http://m.studioclassroom.com/login_radio.php?radio=ad"
+		AUDIO_address="http://m.studioclassroom.com/login_radio.php?req=1&radio=ad"
 		mp3_filename="AD`date "+%y%m%d"`"
 		mp3_dir=$ad_dir
 		VIDEO_TYPE="ad"
 	elif [ "$1" == "lt" ];then
-		AUDIO_address="http://m.studioclassroom.com/login_radio.php?radio=lt"
+		AUDIO_address="http://m.studioclassroom.com/login_radio.php?req=1&radio=lt"
 		mp3_filename="LT`date "+%y%m%d"`"
 		mp3_dir=$lt_dir
 		VIDEO_TYPE="lt"
 	else
-		AUDIO_address="http://m.studioclassroom.com/login_radio.php?radio=ad"	
+		AUDIO_address="http://m.studioclassroom.com/login_radio.php?req=1&radio=ad"
 		mp3_filename="AD`date "+%y%m%d"`"
 		mp3_dir=$ad_dir
 		VIDEO_TYPE="ad"
@@ -222,6 +222,7 @@ get_m3u8_address(){
 	read -s -p "Input studio classroome password: " PASSWORD
 	echo
 
+	echo inline_loop $TSOCKS wget --tries=30 --post-data "username=$USERNAME&password=$PASSWORD" "$AUDIO_address" -O $sc_tmp_dir/$login_html 2>>$ERROR_DL_LOG
 	inline_loop $TSOCKS wget --tries=30 --post-data "username=$USERNAME&password=$PASSWORD" "$AUDIO_address" -O $sc_tmp_dir/$login_html 2>>$ERROR_DL_LOG
 
 	get_audio_title
