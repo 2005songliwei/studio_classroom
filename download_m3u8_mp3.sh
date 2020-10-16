@@ -222,8 +222,10 @@ get_m3u8_address(){
 	read -s -p "Input studio classroome password: " PASSWORD
 	echo
 
-	echo inline_loop $TSOCKS wget --tries=30 --post-data "username=$USERNAME&password=$PASSWORD" "$AUDIO_address" -O $sc_tmp_dir/$login_html 2>>$ERROR_DL_LOG
-	inline_loop $TSOCKS wget --tries=30 --post-data "username=$USERNAME&password=$PASSWORD" "$AUDIO_address" -O $sc_tmp_dir/$login_html 2>>$ERROR_DL_LOG
+	# This is for login checkbox rememberMe value set to "on" to keep login successful
+	status="on";
+	echo inline_loop $TSOCKS wget --tries=30 --post-data "username=$USERNAME&password=$PASSWORD&rememberMe=$status" "$AUDIO_address" -O $sc_tmp_dir/$login_html 2>>$ERROR_DL_LOG
+	inline_loop $TSOCKS wget --tries=30 --post-data "username=$USERNAME&password=$PASSWORD&rememberMe=$status" "$AUDIO_address" -O $sc_tmp_dir/$login_html 2>>$ERROR_DL_LOG
 
 	get_audio_title
 	# check data-account id to see if we login successful 
