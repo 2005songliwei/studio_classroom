@@ -252,7 +252,7 @@ get_m3u8_address(){
 	POLICYKEY=`grep -r 'policyKey:"' $sc_tmp_dir/$F_INDEX_JS  |gawk -F"\"" '{print $2}'`
 
 	# https://edge.api.brightcove.com/playback/v1/accounts/5210448787001/videos/5809616613001
-	edge_address="https://edge.api.brightcove.com/playback/v1/accounts/${DATA_ACCOUNT}/videos/${DATA_VIDEO_ID}"
+	edge_address="http://edge.api.brightcove.com/playback/v1/accounts/${DATA_ACCOUNT}/videos/${DATA_VIDEO_ID}"
 
 	# send request to get original m3u8 address
 	# curl -H @file need curl version >= 7.55.0 but the newest in CentOS is 7.29.0
