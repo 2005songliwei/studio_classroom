@@ -217,17 +217,31 @@ get_audio_title(){
 }
 
 get_m3u8_address(){
-	read -p "Input Email Account to receive download log: " EMAIL_ACCOUNT
-	read -p "Input studio classroom username(Register if you do not have): " USERNAME
-	read -s -p "Input studio classroome password: " PASSWORD
-	echo
+	if [ $# == 0 ];then
+		read -p "Input Email Account to receive download log: " EMAIL_ACCOUNT
+		read -p "Input studio classroom username(Register if you do not have): " USERNAME
+		read -s -p "Input studio classroome password: " PASSWORD
+		echo
 
-	# This is for login checkbox rememberMe value set to "on" to keep login successful
-	status="on";
-	echo inline_loop $TSOCKS wget --tries=30 --post-data "username=$USERNAME&password=$PASSWORD&rememberMe=$status" "$AUDIO_address" -O $sc_tmp_dir/$login_html 2>>$ERROR_DL_LOG
-	inline_loop $TSOCKS wget --tries=30 --post-data "username=$USERNAME&password=$PASSWORD&rememberMe=$status" "$AUDIO_address" -O $sc_tmp_dir/$login_html 2>>$ERROR_DL_LOG
+		# This is for login checkbox rememberMe value set to "on" to keep login successful
+		status="on";
+		echo inline_loop $TSOCKS wget --tries=30 --post-data "username=$USERNAME&password=$PASSWORD&rememberMe=$status" "$AUDIO_address" -O $sc_tmp_dir/$login_html 2>>$ERROR_DL_LOG
+		inline_loop $TSOCKS wget --tries=30 --post-data "username=$USERNAME&password=$PASSWORD&rememberMe=$status" "$AUDIO_address" -O $sc_tmp_dir/$login_html 2>>$ERROR_DL_LOG
+		get_audio_title
+	else
+		echo "need put manually.html file to /tmp/manually.txt"
+		if [ ! -f /tmp/manually.txt ];then
+			echo "====================== There is no /tmp/manually.txt file ====================================="
+			exit 0;
+		fi
 
-	get_audio_title
+		mv /tmp/manually.txt /tmp/sc_download -rf
+
+		login_html="manually.txt"
+		get_audio_title
+		mp3_filename="1-(${AUDIO_TITLE}).mp3"
+	fi
+
 	# check data-account id to see if we login successful 
 	if grep -r "data-account" $sc_tmp_dir/$login_html &>/dev/null; then
 		echo "INFO: login successful."
@@ -406,7 +420,14 @@ main_process(){
 	get_monthly_pic
 	check_date
 	check_video_type $@
-	get_m3u8_address
+
+	# 2 args will trigger download manually
+	# download_m3u8_mp3.sh sc sc
+	if [ $# == 2 ];then
+		get_m3u8_address manually.txt
+	else
+		get_m3u8_address
+	fi
 	dl_ts
 	create_m3u8_for_ffmpeg
 	create_mp3
