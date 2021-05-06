@@ -80,22 +80,22 @@ check_date(){
 
 check_video_type(){
 	if [ "$1" == "sc" ];then
-		AUDIO_address="http://m.studioclassroom.com/login_radio.php?req=1&radio=sc"
+		AUDIO_address="https://m.studioclassroom.com/login_radio.php?req=1&radio=sc"
 		mp3_dir=$sc_dir
 		mp3_filename="SC`date "+%y%m%d"`"
 		VIDEO_TYPE="sc"
 	elif [ "$1" == "ad" ];then
-		AUDIO_address="http://m.studioclassroom.com/login_radio.php?req=1&radio=ad"
+		AUDIO_address="https://m.studioclassroom.com/login_radio.php?req=1&radio=ad"
 		mp3_filename="AD`date "+%y%m%d"`"
 		mp3_dir=$ad_dir
 		VIDEO_TYPE="ad"
 	elif [ "$1" == "lt" ];then
-		AUDIO_address="http://m.studioclassroom.com/login_radio.php?req=1&radio=lt"
+		AUDIO_address="https://m.studioclassroom.com/login_radio.php?req=1&radio=lt"
 		mp3_filename="LT`date "+%y%m%d"`"
 		mp3_dir=$lt_dir
 		VIDEO_TYPE="lt"
 	else
-		AUDIO_address="http://m.studioclassroom.com/login_radio.php?req=1&radio=ad"
+		AUDIO_address="https://m.studioclassroom.com/login_radio.php?req=1&radio=ad"
 		mp3_filename="AD`date "+%y%m%d"`"
 		mp3_dir=$ad_dir
 		VIDEO_TYPE="ad"
@@ -229,13 +229,13 @@ get_m3u8_address(){
 		inline_loop $TSOCKS wget --tries=30 --post-data "username=$USERNAME&password=$PASSWORD&rememberMe=$status" "$AUDIO_address" -O $sc_tmp_dir/$login_html 2>>$ERROR_DL_LOG
 		get_audio_title
 	else
-		echo "need put manually.html file to /tmp/manually.txt"
+		echo "INFO: need put manually.txt file to /tmp/manually.txt"
 		if [ ! -f /tmp/manually.txt ];then
 			echo "====================== There is no /tmp/manually.txt file ====================================="
 			exit 0;
 		fi
 
-		mv /tmp/manually.txt /tmp/sc_download -rf
+		cp /tmp/manually.txt /tmp/sc_download -rf
 
 		login_html="manually.txt"
 		get_audio_title
@@ -421,8 +421,9 @@ main_process(){
 	check_date
 	check_video_type $@
 
-	# 2 args will trigger download manually
-	# download_m3u8_mp3.sh sc sc
+	# 2 args will trigger download manually, do not need login run
+	# belowing directly.
+	# /root/tools/studio_classroom/download_m3u8_mp3.sh sc sc
 	if [ $# == 2 ];then
 		get_m3u8_address manually.txt
 	else
