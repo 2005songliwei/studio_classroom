@@ -131,7 +131,7 @@ check_tmp(){
 
 send_error_email(){
         rm $EMAIL_CONTENT -rf
-        echo "Subject: [ERROR][m3u8][official website] Studio Classroom download list- -- `date "+%D"`" >> $EMAIL_CONTENT
+        echo "Subject: [ERROR][m3u8][$VIDEO_TYPE][official website] Studio Classroom download list- -- `date "+%D"`" >> $EMAIL_CONTENT
         echo >> $EMAIL_CONTENT
         echo "Date: `date`" >> $EMAIL_CONTENT
         echo >> $EMAIL_CONTENT
