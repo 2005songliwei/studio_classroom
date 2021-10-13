@@ -413,10 +413,18 @@ check_proxy(){
 	fi
 }
 
+check_proxy_v2(){
+	count=`ps -ef |grep "0.0.0.0:1080" |wc -l`
+	if [ $count == "1" ];then
+		ssh lsong@ala-lpggp4.wrs.com -ND 0.0.0.0:1080 &
+		sleep 5
+	fi
+}
+
 main_process(){
 	clean_dir
 	check_tmp
-	check_proxy
+	check_proxy_v2
 	get_monthly_pic
 	check_date
 	check_video_type $@
