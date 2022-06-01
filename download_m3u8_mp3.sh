@@ -181,7 +181,7 @@ get_monthly_pic(){
 		inline_loop $TSOCKS wget --no-check-certificate -q -c $PIC_URL -O "$PIC_INDEX"
 
 		sed -i "s/\"/\n/g" "$PIC_INDEX"
-		grep -r "$(date "+%y%m")+" "$PIC_INDEX" > "$sc_tmp_dir/pic_addr"
+		grep -r "$(date "+%y%m")" "$PIC_INDEX" > "$sc_tmp_dir/pic_addr"
 		f_type="LT"
 		for addr in $(cat $sc_tmp_dir/pic_addr)
 		do
