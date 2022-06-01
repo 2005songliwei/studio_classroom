@@ -137,7 +137,11 @@ wget_html(){
 
 	i=0
 	echo "INFO: wget --quiet -c $1 -O $2"
-	tsocks wget -c $1 -O $2
+	if [ $# = 1 ];then
+		tsocks wget -c $1
+	else
+		tsocks wget -c $1 -O $2
+	fi
 	while [ $? -ne 0 ]
 	do
 		i=$((i+1))
@@ -153,7 +157,11 @@ wget_html(){
 		fi
 		sleep 5
 		echo "Error: wget $1 failed, retry... $i"
-		tsocks wget -c  $1 -O $2 2>>$ERROR_DL_LOG
+		if [ $# = 2 ];then
+			tsocks wget -c  $1 -O $2 2>>$ERROR_DL_LOG
+		else
+			tsocks wget -c  $1 2>>$ERROR_DL_LOG
+		fi
 	done
 
 }
@@ -195,6 +203,38 @@ parse_url_new(){
 	# https://d17lx9ucc6k9fc.cloudfront.net/studioclassroom/201812/10131-eps-1229.mp4
 	MP4_REAL_ADDR=`sed "s/\"/\n/g" $TMP_F_LINETV  |grep -i ".mp4"`
 	wget_html $MP4_REAL_ADDR $SC_MP4
+}
+
+dl_ts(){
+	rm /tmp/ts_file_list /tmp/m3u8_file -rf
+	wget_html $VIDEO_URL $TMP_TV_PRO
+	# wget https://www.linetv.tw/api/part/10131/eps/1/part?chocomemberId=null -O /tmp/10131-eps-1-chocomemberId
+	wget_html $SC_LINETV_URL $TMP_F_LINETV
+	sed -i 's/"/\n/g' $TMP_F_LINETV
+	# m3u8_addr="https://d3c7rimkq79yfu.cloudfront.net/11392/11/v1/11392-eps-11_SD.m3u8"
+	m3u8_addr=`cat $TMP_F_LINETV |grep m3u8 |grep https`
+	echo "INFO: m3u8 address is: $m3u8_addr"
+	wget_html $m3u8_addr /tmp/m3u8_file
+	part_m3u8_addr=`cat /tmp/m3u8_file |grep 480p.m3u8`
+	ts_m3u8_addr=${m3u8_addr%/*}/$part_m3u8_addr
+	ts_file_addr="${ts_m3u8_addr%.*}.ts"
+	ts_file_name="${ts_file_addr##*/}"
+	echo "INFO: ts m3u8 address is $ts_m3u8_addr"
+	# $ts_addr=https://d3c7rimkq79yfu.cloudfront.net/11392/11/v1/480/11392-eps-11_480p.m3u8
+	wget_html $ts_m3u8_addr /tmp/ts_file_list
+	echo "INFO: ts file list is /tmp/ts_file_list"
+	#wget_html $ts_file_addr /tmp/$ts_file_name
+	key_url=`cat /tmp/ts_file_list |grep https |head -1 |gawk -F"\"" '{print $2}'`
+	echo "INFO: key address is $key_url"
+	#curl $key_url  -H 'cookie:  connect.sid=s%3A1sCY6vZ0keUp_kWj48hV_zFwLIy0VgtW.8sa7%2F6Rcmay4U%2BgS687kryvfcO3NbxugMcwkZX%2BGHf82' -o /tmp/jurassicPark
+	#row=`sed -n '/https/=' /tmp/ts_file_list  |head -1`
+	#sed -i "$row a #EXT-X-KEY:METHOD=AES-128,URI=\"/tmp/jurassicPark\"" /tmp/ts_file_list
+	sed -i "s#$key_url#/tmp/jurassicPark#g" /tmp/ts_file_list
+	exit
+	sed -i "/https/d" /tmp/ts_file_list
+	sed -i "/EXT-X-BYTERANGE/d" /tmp/ts_file_list
+	sed -i "/https/d" /tmp/ts_file_list
+	ffmpeg -y -allowed_extensions ALL -i /tmp/ts_file_list -acodec copy -vcodec copy $SC_MP4
 }
 
 # Record sc title to /home/studio_classroom/SC_mp3/SC_TITLE
@@ -243,6 +283,7 @@ store_mp3_mp4(){
 		fi
 
 		# upload it to baidu cloud
+		echo "INFO: upload to baidu cloud"
 		/usr/bin/bypy upload $HOME_OF_MP4/"$FILENAME_P1 ($FILENAME_P2).mp4" sc_mp4/${FILENAME_P1}.mp4
 		if [ $? -ne 0 ];then
 			echo "Error: upload file $SC_MP4 to Baidu cloud disk sc_mp4/ failed."
@@ -256,7 +297,8 @@ main_process(){
 	prepare_work
 	# REsolution can be "1080P 720P 480P 360P 270P 144P"
 	#parse_url
-	parse_url_new
+	#parse_url_new
+	dl_ts
 	convert_mp4_to_mp3
 	store_mp3_mp4
 	send_email
