@@ -231,6 +231,7 @@ get_m3u8_address(){
 		get_audio_title
 	else
 		echo "INFO: need put manually.txt file to /tmp/manually.txt"
+		echo "INFO: manually.txt: open websit that want to download and F12 check the source of this paage, then copy it manually to file manually.txt"
 		if [ ! -f /tmp/manually.txt ];then
 			echo "====================== There is no /tmp/manually.txt file ====================================="
 			exit 0;
