@@ -145,9 +145,9 @@ send_error_email(){
         cat $ERROR_DL_LOG >> $EMAIL_CONTENT
         $TSOCKS git send-email --to="liwei.song@windriver.com" --8bit-encoding=UTF-8 --thread --no-chain-reply-to --no-validate $EMAIL_CONTENT
 	if grep -r "0 16" /var/spool/cron/root; then
-		echo '0 20 */1 * * echo -e "liwei.song@windriver.com\n2005songliwei@163.com\ngj24633018" | /root/tools/studio_classroom/download_m3u8_mp3.sh' "$VIDEO_TYPE" >> /var/spool/cron/root
+		echo '0 20 */1 * * echo -e "liwei.song@windriver.com\n2005songliwei@163.com\ngj24633018" | /home/zizi/tools/studio_classroom/download_m3u8_mp3.sh' "$VIDEO_TYPE" >> /var/spool/cron/root
 	else
-		echo '0 16 */1 * * echo -e "liwei.song@windriver.com\n2005songliwei@163.com\ngj24633018" | /root/tools/studio_classroom/download_m3u8_mp3.sh' "$VIDEO_TYPE" >> /var/spool/cron/root
+		echo '0 16 */1 * * echo -e "liwei.song@windriver.com\n2005songliwei@163.com\ngj24633018" | /home/zizi/tools/studio_classroom/download_m3u8_mp3.sh' "$VIDEO_TYPE" >> /var/spool/cron/root
 	fi
 }
 
@@ -240,23 +240,32 @@ get_m3u8_address(){
 		cp /tmp/manually.txt /tmp/sc_download -rf
 
 		login_html="manually.txt"
-		get_audio_title
-		mp3_filename="1-(${AUDIO_TITLE}).mp3"
 	fi
 
 	# check data-account id to see if we login successful 
-	if grep -r "data-account" $sc_tmp_dir/$login_html &>/dev/null; then
-		echo "INFO: login successful."
+	if [ "$login_html" != "manually.txt" ];then
+		if grep -r "data-account" $sc_tmp_dir/$login_html &>/dev/null; then
+			echo "INFO: login successful."
+		else
+			echo "ERROR: login failed, Please check your username or password."
+			echo "ERROR: login failed, Please check your username or password." >>$ERROR_DL_LOG
+			send_error_email
+			exit 1
+		fi
+		DATA_ACCOUNT=`grep -r "data-account" $sc_tmp_dir/$login_html|gawk -F"\"" '{print $2}'`
+		DATA_VIDEO_ID=`grep -r "data-video-id" $sc_tmp_dir/$login_html|gawk -F"\"" '{print $2}'`
+		DATA_PLAYER=`grep -r "data-player" $sc_tmp_dir/$login_html|gawk -F"\"" '{print $2}'`
+		DATA_EMBED=`grep -r "data-embed" $sc_tmp_dir/$login_html|gawk -F"\"" '{print $2}'`
 	else
-		echo "ERROR: login failed, Please check your username or password."
-		echo "ERROR: login failed, Please check your username or password." >>$ERROR_DL_LOG
-		send_error_email
-		exit 1
+		sed -i 's/\\n/\n/g' /tmp/sc_download/manually.txt
+		sed -i 's/"//g' /tmp/sc_download/manually.txt
+		get_audio_title
+		mp3_filename="1-(${AUDIO_TITLE}).mp3"
+		DATA_ACCOUNT=`grep -r "data-account=" $sc_tmp_dir/$login_html|gawk -F'\' '{print $2}'`
+		DATA_VIDEO_ID=`grep -r "data-video-id=" $sc_tmp_dir/$login_html|gawk -F'\' '{print $2}'`
+		DATA_PLAYER=`grep -r "data-player=" $sc_tmp_dir/$login_html|gawk -F'\' '{print $2}'`
+		DATA_EMBED=`grep -r "data-embed=" $sc_tmp_dir/$login_html|gawk -F'\' '{print $2}'`
 	fi
-	DATA_ACCOUNT=`grep -r "data-account" $sc_tmp_dir/$login_html|gawk -F"\"" '{print $2}'`
-	DATA_VIDEO_ID=`grep -r "data-video-id" $sc_tmp_dir/$login_html|gawk -F"\"" '{print $2}'`
-	DATA_PLAYER=`grep -r "data-player" $sc_tmp_dir/$login_html|gawk -F"\"" '{print $2}'`
-	DATA_EMBED=`grep -r "data-embed" $sc_tmp_dir/$login_html|gawk -F"\"" '{print $2}'`
 	
 	# this js include "policykey" which will be used when POST header to edge.api.brightcove.com
 	# index_min_js="http://players.brightcove.net/5210448787001/BJ9edqImx_default/index.min.js"
