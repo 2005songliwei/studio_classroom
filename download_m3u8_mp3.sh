@@ -130,7 +130,6 @@ check_tmp(){
 }
 
 send_error_email(){
-	exit 0
         rm $EMAIL_CONTENT -rf
         echo "Subject: [ERROR][m3u8][$VIDEO_TYPE][official website] Studio Classroom download list- -- `date "+%D"`" >> $EMAIL_CONTENT
         echo >> $EMAIL_CONTENT
@@ -215,8 +214,7 @@ clean_dir(){
 get_audio_title(){
 	AUDIO_TITLE=`grep -r "panel-title" -A1 $sc_tmp_dir/$login_html |tail -1 |gawk -F'<' '{sub(/^[[:blank:]]*/,"",$1);sub(/[[:blank:]]*$/,"",$1);print $1}'`
 	mp3_filename="${mp3_filename} (${AUDIO_TITLE}).mp3"
-	echo "--------------------------------------------------------------"
-	echo "$mp3_filename"
+	#echo "$mp3_filename"
 }
 
 get_m3u8_address(){
@@ -322,21 +320,13 @@ dl_ts(){
 	fi
 
 	echo "INFO: Download ts file to $ts_dir"
-	echo "-------------------------------------------------------------------------------------------"
 
-	#for ts_file in `cat $sc_tmp_dir/$F_TS_LIST |grep "\.ts"`
-	#do
-	#	tmp_ts_name=`echo $ts_file |gawk -F"?" '{print $1}' |gawk -F"/" '{print $NF}'`
-	#	echo $tmp_ts_name
-	#	echo "-------------------------------------------------------------------------------------------"
-	#	echo "inline_loop $TSOCKS wget --tries=30 -q -c $ts_file -O $ts_dir/$tmp_ts_name 2>>$ERROR_DL_LOG"
-	#	inline_loop $TSOCKS wget --tries=30 -q -c $ts_file -O $ts_dir/$tmp_ts_name 2>>$ERROR_DL_LOG
-	#	echo -n "$tmp_ts_name "
-	#done
-
-	ts_file=`tail -3 $sc_tmp_dir/$F_TS_LIST |grep http`
-	echo $ts_file
-	$TSOCKS wget --tries=30 $ts_file -O $mp3_dir/"$mp3_filename"
+	for ts_file in `cat $sc_tmp_dir/$F_TS_LIST |grep "\.ts"`
+	do
+		tmp_ts_name=`echo $ts_file |gawk -F"?" '{print $1}' |gawk -F"/" '{print $NF}'`
+		inline_loop $TSOCKS wget --tries=30 -q -c $ts_file -O $ts_dir/$tmp_ts_name 2>>$ERROR_DL_LOG
+		echo -n "$tmp_ts_name "
+	done
 
 	echo "INFO: Finished download ts file to $ts_dir"
 
@@ -459,8 +449,8 @@ main_process(){
 		get_m3u8_address
 	fi
 	dl_ts
-	#create_m3u8_for_ffmpeg
-	#create_mp3
+	create_m3u8_for_ffmpeg
+	create_mp3
 	send_email $@
 }
 main_process $@
