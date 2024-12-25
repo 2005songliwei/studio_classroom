@@ -283,7 +283,7 @@ get_m3u8_address(){
 	# curl -H @file need curl version >= 7.55.0 but the newest in CentOS is 7.29.0
 	# run when curl version < 7.55.0
 	echo curl -s "$edge_address" -H "Host: edge.api.brightcove.com" -H "Accept: application/json;pk=${POLICYKEY}" -H "Referer: http://m.studioclassroom.com/radio.php?level=ad" -H "Origin: http://m.studioclassroom.com" -H "Connection: keep-alive" -H "Cache-Control: max-age=0" -o $sc_tmp_dir/$F_ORIGINAL_m3u8
-	curl -k -s "$edge_address" -H "Host: edge.api.brightcove.com" -H "Accept: application/json;pk=${POLICYKEY}" -H "Referer: http://m.studioclassroom.com/radio.php?level=ad" -H "Origin: http://m.studioclassroom.com" -H "Connection: keep-alive" -H "Cache-Control: max-age=0" -o $sc_tmp_dir/$F_ORIGINAL_m3u8
+	tsocks curl -k -s "$edge_address" -H "Host: edge.api.brightcove.com" -H "Accept: application/json;pk=${POLICYKEY}" -H "Referer: http://m.studioclassroom.com/radio.php?level=ad" -H "Origin: http://m.studioclassroom.com" -H "Connection: keep-alive" -H "Cache-Control: max-age=0" -o $sc_tmp_dir/$F_ORIGINAL_m3u8
 	echo "INFO: Original m3u8 stored at $sc_tmp_dir/$F_ORIGINAL_m3u8"
 	# run when curl version >= 7.55.0
 	#curl "$edge_address" -H @headerfile -o $sc_tmp_dir/$F_ORIGINAL_m3u8
