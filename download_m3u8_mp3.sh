@@ -308,6 +308,7 @@ get_m3u8_address(){
 	echo "INFO: List of m3u8 address is $LIST_OF_m3u8_addr"
 	echo INFO: $TSOCKS wget -q "$LIST_OF_m3u8_addr" -O  $sc_tmp_dir/$F_TS_LIST
 	inline_loop $TSOCKS wget --tries=30 "$LIST_OF_m3u8_addr" -O  $sc_tmp_dir/$F_TS_LIST 2>>$ERROR_DL_LOG
+	sed -i "/#EXT-X-VERSION:7/,/#EXT-X-ENDLIST/d" $sc_tmp_dir/$F_TS_LIST
 	echo "INFO: ts file list is: $sc_tmp_dir/$F_TS_LIST"
 }
 
